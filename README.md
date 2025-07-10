@@ -17,6 +17,12 @@
 
 ---
 
+<p align="center">
+  <img src="app.png" alt="Open-Transcribe App Screenshot">
+</p>
+
+---
+
 ## 🌟 Why Choose Open-Transcribe?
 
 *   **100% Free Forever:** This application is entirely free and open-source, with no hidden costs. The Gemini API key, essential for its function, is also free to obtain, allowing for unlimited transcriptions.
@@ -47,8 +53,9 @@ Getting started takes less than 2 minutes!
 
 1.  **📦 Download the Installer**
     ```
-    🔗 Locate OpenTranscribeSetup.exe in the Windows_installer/ directory
+    🔗 Download OpenTranscribeSetup.exe from the Windows_installer/ directory
     ```
+    **[⬇️ Direct Download Link](Windows_installer/OpenTranscribeSetup.exe)**
 
 2.  **▶️ Run & Install**
     - Double-click `OpenTranscribeSetup.exe`
