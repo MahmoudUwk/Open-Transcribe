@@ -6,6 +6,7 @@ import threading
 import io
 import os
 import json
+import tempfile # Added import for tempfile
 # import logging # Removed logging import
 from google import genai
 from dotenv import load_dotenv # Keep for now, will remove after confirming API key logic
@@ -72,7 +73,7 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Easy Transcribe")
+        self.title("Open-Transcribe")
         self.geometry("800x600")
 
         self.grid_columnconfigure(0, weight=1)
@@ -198,17 +199,19 @@ class App(customtkinter.CTk):
             # logging.debug("PyAudio terminated.") # Removed logging
             print("PyAudio terminated.") # Added print for user feedback
 
-        temp_file_path = "temp_recorded_audio.wav"
+        # Use tempfile to create a temporary file that handles permissions
+        # and automatic deletion more robustly.
         try:
-            with wave.open(temp_file_path, 'wb') as wf:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
+                temp_file_path = temp_audio_file.name
+                wf = wave.open(temp_audio_file, 'wb')
                 wf.setnchannels(1)
                 wf.setsampwidth(self.p_audio.get_sample_size(pyaudio.paInt16))
                 wf.setframerate(44100)
                 wf.writeframes(b''.join(self.audio_frames))
-            # logging.debug(f"Temporary audio file saved: {temp_file_path}") # Removed logging
-            print(f"Temporary audio file saved: {temp_file_path}") # Added print for user feedback
+                wf.close() # Close wave file explicitly
+            print(f"Temporary audio file saved: {temp_file_path}")
         except Exception as e:
-            # logging.exception(f"Error saving temporary audio file: {e}") # Removed logging
             print(f"Error saving temporary audio file: {e}") # Added print for user feedback
             self.update_transcription_text(f"Error saving audio: {e}")
             return
@@ -247,11 +250,9 @@ class App(customtkinter.CTk):
             print(f"Raw Gemini response text: {response.text}") # Added print for user feedback
 
             self.gemini_client.files.delete(name=uploaded_file.name)
-            # logging.debug(f"Uploaded file {uploaded_file.name} deleted.") # Removed logging
             print(f"Uploaded file {uploaded_file.name} deleted.") # Added print for user feedback
-            os.remove(file_path)
-            # logging.debug(f"Local temporary file {file_path} removed.") # Removed logging
-            print(f"Local temporary file {file_path} removed.") # Added print for user feedback
+            # os.remove(file_path) # Removed explicit os.remove as tempfile handles it
+            # print(f"Local temporary file {file_path} removed.") # Removed print
             
             if response.text:
                  self.update_transcription_text(response.text)
@@ -261,11 +262,9 @@ class App(customtkinter.CTk):
         except Exception as e:
             error_message = f"An error occurred during transcription:\n\n{type(e).__name__}: {e}"
             self.update_transcription_text(error_message)
-            # logging.exception("Exception occurred during transcription:") # Removed logging
             print(f"Exception occurred during transcription: {e}") # Added print for user feedback
             if os.path.exists(file_path):
                 os.remove(file_path)
-                # logging.debug(f"Local temporary file {file_path} removed after error.") # Removed logging
                 print(f"Local temporary file {file_path} removed after error.") # Added print for user feedback
 
 
