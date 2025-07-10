@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+recorded_audio.wav
+main.spec
+build/
+dist/
+.env 

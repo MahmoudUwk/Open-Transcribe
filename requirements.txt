@@ -1,0 +1,5 @@
+customtkinter
+pyaudio
+google-genai
+pydantic
+python-dotenv 
