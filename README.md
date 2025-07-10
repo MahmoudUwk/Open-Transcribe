@@ -9,7 +9,7 @@
 [![Python](https://img.shields.io/badge/Python-3.x-green.svg)](https://www.python.org/)
 [![Powered by](https://img.shields.io/badge/Powered%20by-Gemini%20AI-orange.svg)](https://ai.google.dev/)
 
-*The ultimate free, open-source speech transcription tool that revolutionizes how you capture and convert spoken words!*
+*The ultimate free, open-source desktop application that revolutionizes how you capture and convert spoken words! Directly record audio within the app and get instant, on-the-fly transcriptions without the hassle of uploading files.*
 
 [📥 Download](#-quick--easy-installation) • [🚀 Features](#-why-choose-open-transcribe) • [💻 Build from Source](#-build-from-source) • [📖 Documentation](#-project-structure)
 
@@ -21,7 +21,11 @@
 
 *   **100% Free Forever:** This application is entirely free and open-source, with no hidden costs. The Gemini API key, essential for its function, is also free to obtain, allowing for unlimited transcriptions.
 
-*   **Supercharge Your Productivity:** Streamline your workflow by quickly transcribing meetings, lectures, and interviews. It supports multiple languages to save you significant manual effort.
+*   **Seamless On-the-Fly Transcription:** Forget uploading! Simply hit record in the app, capture your audio, and get instant transcriptions. It's incredibly convenient and eliminates extra steps.
+    *   **Use Cases:** Perfect for quickly transcribing:
+        *   **Meetings & Lectures:** Capture every word without frantic note-taking.
+        *   **Interviews:** Focus on the conversation, not the transcription process.
+        *   **Personal Notes:** Dictate thoughts and ideas, then convert them to text instantly.
 
 *   **Privacy First:** Your API key is stored securely on your device and is never transmitted externally. You retain full control over your data, and the application functions offline once set up.
 
