@@ -19,48 +19,13 @@
 
 ## 🌟 Why Choose Open-Transcribe?
 
-<table>
-<tr>
-<td width="50%">
+*   **100% Free Forever:** This application is entirely free and open-source, with no hidden costs. The Gemini API key, essential for its function, is also free to obtain, allowing for unlimited transcriptions.
 
-### 💰 **100% Free Forever**
-- ✅ Completely open-source
-- ✅ No hidden costs or subscriptions
-- ✅ Free Gemini API (no credit card required)
-- ✅ Unlimited transcriptions
+*   **Supercharge Your Productivity:** Streamline your workflow by quickly transcribing meetings, lectures, and interviews. It supports multiple languages to save you significant manual effort.
 
-</td>
-<td width="50%">
+*   **Privacy First:** Your API key is stored securely on your device and is never transmitted externally. You retain full control over your data, and the application functions offline once set up.
 
-### 🚀 **Supercharge Your Productivity**
-- 📝 Transcribe meetings in real-time
-- 🎓 Convert lectures to text instantly
-- 📞 Turn interviews into searchable content
-- 💬 Multi-language support
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🔒 **Privacy First**
-- 🏠 Your API key stays on your device
-- 🔐 Zero data transmission to our servers
-- 🛡️ Complete control over your content
-- 🌐 Works entirely offline after setup
-
-</td>
-<td width="50%">
-
-### ⚡ **Cutting-Edge Technology**
-- 🤖 Powered by Google's Gemini AI
-- 🎯 High accuracy transcriptions
-- 🌍 Multiple language support
-- 🖥️ Beautiful, intuitive interface
-
-</td>
-</tr>
-</table>
+*   **Cutting-Edge Technology:** Leveraging Google's Gemini AI, Open-Transcribe delivers highly accurate, multi-language transcriptions through a user-friendly interface.
 
 ---
 
