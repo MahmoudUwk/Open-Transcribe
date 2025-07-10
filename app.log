@@ -1,1 +1,67 @@
-2025-07-10 10:40:29,748 - DEBUG - Using proactor: IocpProactor
+2025-07-10 11:29:45,700 - DEBUG - Attempting to load API key from: C:\Users\mahmo\AppData\Roaming\EasyTranscribe\config.json
+2025-07-10 11:29:45,712 - DEBUG - API key loaded successfully.
+2025-07-10 11:29:45,714 - DEBUG - Using proactor: IocpProactor
+2025-07-10 11:29:46,761 - INFO - Gemini client initialized successfully.
+2025-07-10 11:29:51,690 - DEBUG - Starting recording.
+2025-07-10 11:29:52,135 - DEBUG - Audio stream opened.
+2025-07-10 11:29:52,135 - DEBUG - Recording audio in background thread.
+2025-07-10 11:29:59,110 - DEBUG - Stopping recording.
+2025-07-10 11:29:59,135 - DEBUG - Audio stream stopped and closed.
+2025-07-10 11:29:59,137 - DEBUG - PyAudio terminated.
+2025-07-10 11:29:59,146 - DEBUG - Temporary audio file saved: temp_recorded_audio.wav
+2025-07-10 11:29:59,146 - DEBUG - Transcribing audio from: temp_recorded_audio.wav
+2025-07-10 11:29:59,585 - DEBUG - connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2025-07-10 11:29:59,603 - DEBUG - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B19AB0BCA0>
+2025-07-10 11:29:59,603 - DEBUG - start_tls.started ssl_context=<ssl.SSLContext object at 0x000001B196A27D40> server_hostname='generativelanguage.googleapis.com' timeout=None
+2025-07-10 11:29:59,647 - DEBUG - start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001B19AB07EE0>
+2025-07-10 11:29:59,647 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-07-10 11:29:59,647 - DEBUG - send_request_headers.complete
+2025-07-10 11:29:59,647 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-07-10 11:29:59,647 - DEBUG - send_request_body.complete
+2025-07-10 11:29:59,647 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-07-10 11:30:00,013 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'text/plain; charset=utf-8'), (b'X-GUploader-UploadID', b'ABgVH8_fqkmti6UihPZWhLuSsUff4ROwifPFbgdbhn-OSDEmGB2Lv482XCKO0xNKYcO98AGV1o6Y3jifaMI-7PSglTlVaDm2rJCW77y0Qr57RZQ'), (b'X-Goog-Upload-Status', b'active'), (b'X-Goog-Upload-URL', b'https://generativelanguage.googleapis.com/upload/v1beta/files?upload_id=ABgVH8_fqkmti6UihPZWhLuSsUff4ROwifPFbgdbhn-OSDEmGB2Lv482XCKO0xNKYcO98AGV1o6Y3jifaMI-7PSglTlVaDm2rJCW77y0Qr57RZQ&upload_protocol=resumable'), (b'X-Goog-Upload-Control-URL', b'https://generativelanguage.googleapis.com/upload/v1beta/files?upload_id=ABgVH8_fqkmti6UihPZWhLuSsUff4ROwifPFbgdbhn-OSDEmGB2Lv482XCKO0xNKYcO98AGV1o6Y3jifaMI-7PSglTlVaDm2rJCW77y0Qr57RZQ&upload_protocol=resumable'), (b'X-Goog-Upload-Chunk-Granularity', b'8388608'), (b'X-Goog-Upload-Header-x-google-esf-cloud-client-params', b'backend_service_name: "generativelanguage.googleapis.com" backend_fully_qualified_method: "google.ai.generativelanguage.v1beta.FileService.CreateFile"'), (b'X-Goog-Upload-Header-X-Google-Session-Info', b'GgQYECgLIAE6IxIhZ2VuZXJhdGl2ZWxhbmd1YWdlLmdvb2dsZWFwaXMuY29t'), (b'X-Goog-Upload-Header-X-Google-Backends', b'unix:/tmp/esfbackend.1752105717.934935.993045'), (b'X-Goog-Upload-Header-Content-Type', b'application/json; charset=UTF-8'), (b'X-Goog-Upload-Header-X-Google-Security-Signals', b'FRAMEWORK=ONE_PLATFORM,ENV=borg,ENV_DEBUG=borg_user:genai-api;borg_job:prod.genai-api'), (b'X-Goog-Upload-Header-Vary', b'Origin'), (b'X-Goog-Upload-Header-Vary', b'X-Origin'), (b'X-Goog-Upload-Header-Vary', b'Referer'), (b'X-Goog-Upload-Header-X-Google-GFE-Backend-Request-Cost', b'14.7374'), (b'Content-Length', b'0'), (b'Date', b'Thu, 10 Jul 2025 15:30:00 GMT'), (b'Server', b'UploadServer'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000')])
+2025-07-10 11:30:00,013 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/upload/v1beta/files "HTTP/1.1 200 OK"
+2025-07-10 11:30:00,013 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-07-10 11:30:00,013 - DEBUG - receive_response_body.complete
+2025-07-10 11:30:00,013 - DEBUG - response_closed.started
+2025-07-10 11:30:00,013 - DEBUG - response_closed.complete
+2025-07-10 11:30:00,037 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-07-10 11:30:00,039 - DEBUG - send_request_headers.complete
+2025-07-10 11:30:00,039 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-07-10 11:30:00,187 - DEBUG - send_request_body.complete
+2025-07-10 11:30:00,187 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-07-10 11:30:00,567 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'X-GUploader-UploadID', b'ABgVH8_fqkmti6UihPZWhLuSsUff4ROwifPFbgdbhn-OSDEmGB2Lv482XCKO0xNKYcO98AGV1o6Y3jifaMI-7PSglTlVaDm2rJCW77y0Qr57RZQ'), (b'X-Goog-Upload-Status', b'final'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Length', b'504'), (b'Date', b'Thu, 10 Jul 2025 15:30:01 GMT'), (b'Server', b'UploadServer'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000')])
+2025-07-10 11:30:00,567 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/upload/v1beta/files?upload_id=ABgVH8_fqkmti6UihPZWhLuSsUff4ROwifPFbgdbhn-OSDEmGB2Lv482XCKO0xNKYcO98AGV1o6Y3jifaMI-7PSglTlVaDm2rJCW77y0Qr57RZQ&upload_protocol=resumable "HTTP/1.1 200 OK"
+2025-07-10 11:30:00,567 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-07-10 11:30:00,567 - DEBUG - receive_response_body.complete
+2025-07-10 11:30:00,567 - DEBUG - response_closed.started
+2025-07-10 11:30:00,567 - DEBUG - response_closed.complete
+2025-07-10 11:30:00,567 - DEBUG - Audio file uploaded. File name: files/hrbojas2hdqc
+2025-07-10 11:30:00,573 - DEBUG - Prompt sent to Gemini: Generate a transcript of the speech.
+2025-07-10 11:30:00,573 - INFO - AFC is enabled with max remote calls: 10.
+2025-07-10 11:30:00,583 - DEBUG - send_request_headers.started request=<Request [b'POST']>
+2025-07-10 11:30:00,583 - DEBUG - send_request_headers.complete
+2025-07-10 11:30:00,583 - DEBUG - send_request_body.started request=<Request [b'POST']>
+2025-07-10 11:30:00,583 - DEBUG - send_request_body.complete
+2025-07-10 11:30:00,583 - DEBUG - receive_response_headers.started request=<Request [b'POST']>
+2025-07-10 11:30:01,470 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Thu, 10 Jul 2025 15:30:02 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=878'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-07-10 11:30:01,470 - INFO - HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+2025-07-10 11:30:01,470 - DEBUG - receive_response_body.started request=<Request [b'POST']>
+2025-07-10 11:30:01,470 - DEBUG - receive_response_body.complete
+2025-07-10 11:30:01,470 - DEBUG - response_closed.started
+2025-07-10 11:30:01,470 - DEBUG - response_closed.complete
+2025-07-10 11:30:01,470 - INFO - AFC remote call 1 is done.
+2025-07-10 11:30:01,470 - DEBUG - Raw Gemini response text: Hello 1 2 3, how is it going? Are you okay? Thank you for helping me.
+2025-07-10 11:30:01,470 - DEBUG - send_request_headers.started request=<Request [b'DELETE']>
+2025-07-10 11:30:01,470 - DEBUG - send_request_headers.complete
+2025-07-10 11:30:01,470 - DEBUG - send_request_body.started request=<Request [b'DELETE']>
+2025-07-10 11:30:01,470 - DEBUG - send_request_body.complete
+2025-07-10 11:30:01,470 - DEBUG - receive_response_headers.started request=<Request [b'DELETE']>
+2025-07-10 11:30:01,828 - DEBUG - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Thu, 10 Jul 2025 15:30:02 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=341'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2025-07-10 11:30:01,828 - INFO - HTTP Request: DELETE https://generativelanguage.googleapis.com/v1beta/files/hrbojas2hdqc "HTTP/1.1 200 OK"
+2025-07-10 11:30:01,828 - DEBUG - receive_response_body.started request=<Request [b'DELETE']>
+2025-07-10 11:30:01,830 - DEBUG - receive_response_body.complete
+2025-07-10 11:30:01,830 - DEBUG - response_closed.started
+2025-07-10 11:30:01,830 - DEBUG - response_closed.complete
+2025-07-10 11:30:01,830 - DEBUG - Uploaded file files/hrbojas2hdqc deleted.
+2025-07-10 11:30:01,830 - DEBUG - Local temporary file temp_recorded_audio.wav removed.

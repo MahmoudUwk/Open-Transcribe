@@ -5,16 +5,59 @@ import wave
 import threading
 import io
 import os
+import json
+import logging
 from google import genai
-from pydantic import BaseModel
-from dotenv import load_dotenv
+from dotenv import load_dotenv # Keep for now, will remove after confirming API key logic
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='app.log',
+    filemode='w'
+)
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
 
-class Recipe(BaseModel):
-    recipe_name: str
-    ingredients: list[str]
+def get_app_config_dir():
+    if os.name == 'nt':  # Windows
+        return os.path.join(os.environ['APPDATA'], 'EasyTranscribe')
+    else:  # Linux/macOS
+        return os.path.join(os.path.expanduser('~'), '.config', 'EasyTranscribe')
+
+def load_api_key():
+    config_dir = get_app_config_dir()
+    config_path = os.path.join(config_dir, 'config.json')
+    logging.debug(f"Attempting to load API key from: {config_path}")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                api_key = config.get('GEMINI_API_KEY')
+                if api_key:
+                    logging.debug("API key loaded successfully.")
+                else:
+                    logging.warning("API key not found in config file.")
+                return api_key
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding config.json: {e}")
+            return None
+    logging.debug("Config file not found.")
+    return None
+
+def save_api_key(api_key):
+    config_dir = get_app_config_dir()
+    os.makedirs(config_dir, exist_ok=True)
+    config_path = os.path.join(config_dir, 'config.json')
+    logging.debug(f"Attempting to save API key to: {config_path}")
+    try:
+        with open(config_path, 'w') as f:
+            json.dump({'GEMINI_API_KEY': api_key}, f)
+        logging.debug("API key saved successfully.")
+    except IOError as e:
+        logging.error(f"Error saving API key to config.json: {e}")
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -54,17 +97,31 @@ class App(customtkinter.CTk):
         self.stream = None
         self.gemini_client = None
 
-        load_dotenv()
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = load_api_key()
         if not api_key:
-            self.update_transcription_text("Error: GEMINI_API_KEY not found in .env file.\nPlease set it and restart the application.")
-            self.record_button.configure(state="disabled")
-        else:
+            logging.info("API key not found, prompting user.")
+            dialog = customtkinter.CTkInputDialog(text="Please enter your Gemini API Key:", title="API Key Required")
+            api_key = dialog.get_input()
+            if api_key:
+                save_api_key(api_key)
+            else:
+                self.update_transcription_text("Error: Gemini API Key not provided. Application will not function.")
+                self.record_button.configure(state="disabled")
+                logging.error("User did not provide API key.")
+                return
+
+        if api_key:
             try:
                 self.gemini_client = genai.Client(api_key=api_key)
+                logging.info("Gemini client initialized successfully.")
             except Exception as e:
                 self.update_transcription_text(f"Error initializing Gemini client: {e}")
                 self.record_button.configure(state="disabled")
+                logging.exception("Error initializing Gemini client.")
+        else:
+            self.update_transcription_text("Error: Gemini API Key not available. Please restart and provide the key.")
+            self.record_button.configure(state="disabled")
+            logging.error("API key is None after load/prompt.")
 
     def toggle_record(self):
         if self.recording:
@@ -73,8 +130,10 @@ class App(customtkinter.CTk):
             self.start_recording()
 
     def start_recording(self):
+        logging.debug("Starting recording.")
         if not self.gemini_client:
-            self.update_transcription_text("Error: Gemini client not initialized. Check API Key in .env file.")
+            self.update_transcription_text("Error: Gemini client not initialized. Check API Key.")
+            logging.error("Attempted to start recording with uninitialized Gemini client.")
             return
         
         self.recording = True
@@ -89,19 +148,22 @@ class App(customtkinter.CTk):
                                          rate=44100,
                                          input=True,
                                          frames_per_buffer=1024)
-
+        logging.debug("Audio stream opened.")
         threading.Thread(target=self.record_audio, daemon=True).start()
 
     def record_audio(self):
+        logging.debug("Recording audio in background thread.")
         while self.recording:
             try:
                 data = self.stream.read(1024)
                 self.audio_frames.append(data)
-            except IOError:
+            except IOError as e:
+                logging.error(f"IOError during audio recording: {e}")
                 # This can happen if the stream is closed while reading
                 pass
 
     def stop_recording(self):
+        logging.debug("Stopping recording.")
         self.recording = False
         self.record_button.configure(text="Record")
         self.update_transcription_text("Recording stopped. Processing...")
@@ -109,39 +171,55 @@ class App(customtkinter.CTk):
         if self.stream:
             self.stream.stop_stream()
             self.stream.close()
+            logging.debug("Audio stream stopped and closed.")
         if self.p_audio:
             self.p_audio.terminate()
+            logging.debug("PyAudio terminated.")
 
         temp_file_path = "temp_recorded_audio.wav"
-        with wave.open(temp_file_path, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(self.p_audio.get_sample_size(pyaudio.paInt16))
-            wf.setframerate(44100)
-            wf.writeframes(b''.join(self.audio_frames))
+        try:
+            with wave.open(temp_file_path, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(self.p_audio.get_sample_size(pyaudio.paInt16))
+                wf.setframerate(44100)
+                wf.writeframes(b''.join(self.audio_frames))
+            logging.debug(f"Temporary audio file saved: {temp_file_path}")
+        except Exception as e:
+            logging.exception(f"Error saving temporary audio file: {e}")
+            self.update_transcription_text(f"Error saving audio: {e}")
+            return
         
         threading.Thread(target=self.transcribe_audio, args=(temp_file_path,), daemon=True).start()
 
 
     def transcribe_audio(self, file_path):
+        logging.debug(f"Transcribing audio from: {file_path}")
         if not self.gemini_client:
             self.update_transcription_text("Error: Gemini client not initialized.")
+            logging.error("Gemini client not initialized during transcription.")
             return
         
         self.update_transcription_text("Uploading audio...")
 
         try:
             uploaded_file = self.gemini_client.files.upload(file=file_path)
+            logging.debug(f"Audio file uploaded. File name: {uploaded_file.name}")
             self.update_transcription_text("Transcribing...")
             
             prompt = "Generate a transcript of the speech."
+            logging.debug(f"Prompt sent to Gemini: {prompt}")
 
             response = self.gemini_client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[prompt, uploaded_file],
             )
             
+            logging.debug(f"Raw Gemini response text: {response.text}")
+
             self.gemini_client.files.delete(name=uploaded_file.name)
+            logging.debug(f"Uploaded file {uploaded_file.name} deleted.")
             os.remove(file_path)
+            logging.debug(f"Local temporary file {file_path} removed.")
             
             if response.text:
                  self.update_transcription_text(response.text)
@@ -151,8 +229,10 @@ class App(customtkinter.CTk):
         except Exception as e:
             error_message = f"An error occurred during transcription:\n\n{type(e).__name__}: {e}"
             self.update_transcription_text(error_message)
+            logging.exception("Exception occurred during transcription:")
             if os.path.exists(file_path):
                 os.remove(file_path)
+                logging.debug(f"Local temporary file {file_path} removed after error.")
 
 
     def update_transcription_text(self, text):
