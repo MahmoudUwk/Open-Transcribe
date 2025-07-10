@@ -18,7 +18,7 @@
 ---
 
 <p align="center">
-  <img src="app.png" alt="Open-Transcribe App Screenshot">
+  <img src="app.png" alt="Open-Transcribe App Screenshot" width="400px">
 </p>
 
 ---
