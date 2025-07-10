@@ -29,28 +29,33 @@
 
 ---
 
+## ⚠️ Disclaimer & Early Development Notice
+
+Open-Transcribe is provided "as-is" and is currently in its early development stages (Version 1.0). While we strive for accuracy and reliability, we cannot guarantee the absence of errors or interruptions. By using this free software, you acknowledge and agree that the developers are not responsible for any direct, indirect, incidental, special, or consequential damages, or any loss of data or profits, arising out of or in connection with the use or performance of this application. Your use of Open-Transcribe is at your sole risk.
+
+---
+
 ## 📥 Quick & Easy Installation
 
 ### 🎯 **One-Click Install** *(Recommended for Everyone)*
 
 Getting started takes less than 2 minutes! 
 
-1. **📦 Download the Installer**
-   ```
-   🔗 Get OpenTranscribeSetup.exe from Windows_installer/ directory
-   📅 (GitHub releases coming soon!)
-   ```
+1.  **📦 Download the Installer**
+    ```
+    🔗 Locate OpenTranscribeSetup.exe in the Windows_installer/ directory
+    ```
 
-2. **▶️ Run & Install**
-   - Double-click the installer
-   - Follow the simple setup wizard
-   - Launch from Start Menu or Desktop
+2.  **▶️ Run & Install**
+    - Double-click `OpenTranscribeSetup.exe`
+    - Follow the simple on-screen setup wizard
+    - Launch Open-Transcribe from your Start Menu or Desktop shortcut
 
-3. **🔑 Get Your FREE API Key**
+3.  **🔑 Get Your FREE API Key (Gemini API)**
    - Visit [🌟 Google AI Studio](https://aistudio.google.com/apikey)
    - Sign in with Google (free account)
    - Generate your API key
-   - Paste it into Open-Transcribe
+   - Paste it into Open-Transcribe (only once at the first launch)
 
 **🎉 That's it! You're ready to transcribe!**
 
