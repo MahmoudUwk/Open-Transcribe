@@ -75,7 +75,7 @@ class App(customtkinter.CTk):
         self.main_frame.grid_columnconfigure(2, weight=1)
         self.main_frame.grid_rowconfigure(1, weight=1)
 
-        self.record_button = customtkinter.CTkButton(self.main_frame, text="Record", command=self.toggle_record)
+        self.record_button = customtkinter.CTkButton(self.main_frame, text="Record", command=self.toggle_record, font=("Arial", 16), height=50)
         self.record_button.grid(row=0, column=0, padx=20, pady=10, sticky="w")
         
         # Language selection
@@ -88,7 +88,7 @@ class App(customtkinter.CTk):
         self.language_menu.grid(row=0, column=2, padx=(0, 20), pady=10, sticky="w")
 
 
-        self.transcription_textbox = customtkinter.CTkTextbox(self.main_frame, state="disabled")
+        self.transcription_textbox = customtkinter.CTkTextbox(self.main_frame, state="disabled", font=("Arial", 16))
         self.transcription_textbox.grid(row=1, column=0, columnspan=3, padx=20, pady=20, sticky="nsew")
 
         self.recording = False
@@ -206,7 +206,8 @@ class App(customtkinter.CTk):
             logging.debug(f"Audio file uploaded. File name: {uploaded_file.name}")
             self.update_transcription_text("Transcribing...")
             
-            prompt = "Generate a transcript of the speech."
+            language = self.language_var.get()
+            prompt = f"Generate a transcript of the speech in {language}, generate everything in one paragraph without timestamps."
             logging.debug(f"Prompt sent to Gemini: {prompt}")
 
             response = self.gemini_client.models.generate_content(
