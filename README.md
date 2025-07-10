@@ -31,7 +31,7 @@
 
 ## ⚠️ Disclaimer & Early Development Notice
 
-Open-Transcribe is provided "as-is" and is currently in its early development stages (Version 1.0). While we strive for accuracy and reliability, we cannot guarantee the absence of errors or interruptions. By using this free software, you acknowledge and agree that the developers are not responsible for any direct, indirect, incidental, special, or consequential damages, or any loss of data or profits, arising out of or in connection with the use or performance of this application. Your use of Open-Transcribe is at your sole risk.
+Open-Transcribe is provided "as-is" and is currently in its early development stages (Version 1.0). While we are committed to providing a reliable and accurate experience and will never intentionally cause loss of your recordings, we cannot guarantee uninterrupted service or the complete absence of unforeseen issues. By using this free software, you acknowledge and agree that the developers are not responsible for any direct, indirect, incidental, special, or consequential damages, or any loss of data or profits, arising out of or in connection with the use or performance of this application. Your use of Open-Transcribe is at your sole risk.
 
 ---
 
