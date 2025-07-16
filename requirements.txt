@@ -2,4 +2,5 @@ customtkinter
 pyaudio
 google-genai
 pydantic
-python-dotenv 
+python-dotenv
+retrying

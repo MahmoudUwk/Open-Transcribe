@@ -6,11 +6,13 @@ import os
 import tempfile
 import threading
 import tkinter as tk
+from tkinter import messagebox
 import wave
 
 import customtkinter
 import pyaudio
 from google import genai
+from retrying import retry
 
 
 customtkinter.set_appearance_mode("dark")
@@ -477,6 +479,7 @@ class App(customtkinter.CTk):
 
         threading.Thread(target=self.transcribe_audio, args=(temp_file_path,), daemon=True).start()
 
+    @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def transcribe_audio(self, file_path):
         """Transcribes the audio file using the Gemini API."""
         if not self.gemini_client:
@@ -511,11 +514,16 @@ class App(customtkinter.CTk):
                 self.update_status("Failed", "red")
 
         except Exception as e:
-            error_message = f"❌ An error occurred during transcription:\n\n{type(e).__name__}: {e}"
+            error_message = f"❌ An error occurred during transcription: {e}"
             self.update_transcription_text(error_message)
             self.update_status("Error", "red")
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            # Show an error message box to the user
+            messagebox.showerror(
+                "Transcription Failed",
+                f"Sorry, the audio could not be transcribed after several attempts.\n\n"
+                f"Error: {e}\n\n"
+                f"The recorded audio has been saved at:\n{file_path}"
+            )
 
     def copy_transcription(self):
         """Copies the transcription text to clipboard."""
