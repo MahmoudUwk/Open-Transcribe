@@ -4,6 +4,20 @@
 
 **Transform Your Voice into Text with AI-Powered Precision**
 
+## 🚀 What's New in V1.2
+
+**We've supercharged your transcription experience!** 🎉
+
+✨ **Sleek New Interface** - Enjoy a fresh, modern design that's as beautiful as it is functional
+
+🌍 **Multi-Language Mastery** - Now supporting multiple languages! Transcribe in your preferred language with ease
+
+🎯 **Dual Modes** - Choose between **Live Transcribe** for real-time transcription or **Plan Mode** for scheduled recordings
+
+⚡ **Faster, Smoother, Better** - Optimized performance for a seamless user experience
+
+*The future of transcription is here, and it's more powerful than ever!*
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
 [![Python](https://img.shields.io/badge/Python-3.x-green.svg)](https://www.python.org/)

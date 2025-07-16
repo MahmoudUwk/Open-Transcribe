@@ -5,8 +5,9 @@ import json
 import os
 import tempfile
 import threading
+import time
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import wave
 
 import customtkinter
@@ -17,6 +18,11 @@ from retrying import retry
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
+
+PROMPTS = {
+    "Transcribe": "Generate a transcript of the speech in {languages}. Generate everything in one paragraph without timestamps.",
+    "Transcribe and Plan": "Transcribe the following audio. Then, based on the transcription, create a concise action plan or a summary of the key points. Format the output clearly with a 'Transcription' section and a 'Plan' section."
+}
 
 
 def get_app_config_dir():
@@ -45,6 +51,37 @@ def load_api_key():
     return None
 
 
+class ConfigManager:
+    def __init__(self, config_dir):
+        self.config_dir = config_dir
+        self.config_path = os.path.join(self.config_dir, 'settings.json')
+        self.settings = self.load_settings()
+
+    def load_settings(self):
+        if not os.path.exists(self.config_path):
+            return {}
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error loading settings: {e}")
+            return {}
+
+    def save_settings(self):
+        os.makedirs(self.config_dir, exist_ok=True)
+        try:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.settings, f, indent=4)
+        except IOError as e:
+            print(f"Error saving settings: {e}")
+
+    def get_setting(self, key, default=None):
+        return self.settings.get(key, default)
+
+    def set_setting(self, key, value):
+        self.settings[key] = value
+        self.save_settings()
+
 def save_api_key(api_key):
     """Saves the Gemini API key to the config file."""
     config_dir = get_app_config_dir()
@@ -65,6 +102,14 @@ class App(customtkinter.CTk):
     """The main application class for the transcriber."""
     def __init__(self):
         super().__init__()
+
+        self.config_manager = ConfigManager(get_app_config_dir())
+        self.prompts = PROMPTS
+
+        # Load saved settings
+        saved_languages = self.config_manager.get_setting('selected_languages', ['English'])
+        self.selected_languages = saved_languages if isinstance(saved_languages, list) else [saved_languages]
+        self.selected_prompt = self.config_manager.get_setting('selected_prompt', list(self.prompts.keys())[0])
 
         self.title("🎙️ Open-Transcribe")
         self.geometry("900x700")
@@ -132,25 +177,64 @@ class App(customtkinter.CTk):
         self.subtitle_label.grid(row=0, column=2, padx=20, pady=20, sticky="e")
 
     def create_main_content(self):
-        """Creates the main content area."""
-        self.content_frame = customtkinter.CTkFrame(self.main_container, corner_radius=15)
-        self.content_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
-        self.content_frame.grid_columnconfigure(0, weight=1)
-        self.content_frame.grid_rowconfigure(2, weight=1)
+        """Creates the main content area with a two-column layout."""
+        self.main_content_frame = customtkinter.CTkFrame(self.main_container, corner_radius=0, fg_color="transparent")
+        self.main_content_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+        self.main_content_frame.grid_columnconfigure(0, weight=1)  # Left column
+        self.main_content_frame.grid_columnconfigure(1, weight=4)  # Right column (4x wider)
+        self.main_content_frame.grid_rowconfigure(0, weight=1)
 
-        # Control panel
-        self.create_control_panel()
-        
-        # Language selection
-        self.create_language_selection()
-        
-        # Transcription area
-        self.create_transcription_area()
+        # --- Left Column ---
+        self.left_frame = customtkinter.CTkFrame(self.main_content_frame, fg_color="transparent")
+        self.left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        self.left_frame.grid_columnconfigure(0, weight=1)
+        self.left_frame.grid_rowconfigure(1, weight=1) # Allow language list to expand
 
-    def create_control_panel(self):
+        # Control panel and Language selection
+        self.create_control_panel(self.left_frame)
+        self.create_language_selection(self.left_frame)
+
+        # --- Right Column ---
+        self.right_frame = customtkinter.CTkFrame(self.main_content_frame, fg_color="transparent")
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        self.right_frame.grid_columnconfigure(0, weight=1)
+        self.right_frame.grid_rowconfigure(0, weight=1)  # Prompt area
+        self.right_frame.grid_rowconfigure(1, weight=4)  # Transcription area (4x taller)
+
+        # Prompt selection and Transcription area
+        self.create_prompt_selection(self.right_frame)
+        self.create_transcription_area(self.right_frame)
+
+    def create_prompt_selection(self, parent_frame):
+        """Creates the prompt selection dropdown."""
+        self.prompt_frame = customtkinter.CTkFrame(parent_frame)
+        self.prompt_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        self.prompt_frame.grid_columnconfigure(1, weight=1)
+
+        self.prompt_label = customtkinter.CTkLabel(self.prompt_frame, text="Prompt:", font=("Arial", 16, "bold"))
+        self.prompt_label.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="w")
+
+        self.prompt_menu = customtkinter.CTkOptionMenu(
+            self.prompt_frame,
+            values=list(self.prompts.keys()),
+            command=self.set_prompt,
+            variable=customtkinter.StringVar(value=self.selected_prompt),
+            font=("Arial", 14),
+            dropdown_font=("Arial", 12)
+        )
+        self.prompt_menu.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ew")
+
+    def set_prompt(self, prompt_name):
+        """Sets the selected prompt and saves it to config."""
+        self.selected_prompt = prompt_name
+        self.config_manager.set_setting('selected_prompt', self.selected_prompt)
+        self.update_status(f"Prompt set to: {prompt_name}", "blue")
+        self.after(2000, lambda: self.update_status("Ready"))
+
+    def create_control_panel(self, parent_frame):
         """Creates the control panel with record button and status."""
-        self.control_frame = customtkinter.CTkFrame(self.content_frame, height=100)
-        self.control_frame.grid(row=0, column=0, padx=20, pady=20, sticky="ew")
+        self.control_frame = customtkinter.CTkFrame(parent_frame, height=100)
+        self.control_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         self.control_frame.grid_columnconfigure(1, weight=1)
         
         # Record button with enhanced styling
@@ -186,20 +270,20 @@ class App(customtkinter.CTk):
         )
         self.status_label.grid(row=0, column=1, padx=5)
 
-    def create_language_selection(self):
+    def create_language_selection(self, parent_frame):
         """Creates an improved language selection interface."""
-        self.language_frame = customtkinter.CTkFrame(self.content_frame)
-        self.language_frame.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="ew")
+        self.language_frame = customtkinter.CTkFrame(parent_frame)
+        self.language_frame.grid(row=1, column=0, sticky="nsew", pady=(10,0))
         self.language_frame.grid_columnconfigure(1, weight=1)
         
         # Language selection label
         self.language_title = customtkinter.CTkLabel(
             self.language_frame,
-            text="🌐 Select Language:",
+            text="🌐 Select Languages:",
             font=("Arial", 14, "bold")
         )
         self.language_title.grid(row=0, column=0, padx=20, pady=15, sticky="w")
-        
+
         # Language options
         self.language_options = [
             ("🇺🇸 English", "English"),
@@ -219,15 +303,14 @@ class App(customtkinter.CTk):
             ("🇳🇱 Dutch", "Dutch")
         ]
         
-        self.language_var = customtkinter.StringVar(value="English")
-        
         # Create scrollable frame for language buttons
         self.language_scroll_frame = customtkinter.CTkScrollableFrame(
             self.language_frame,
-            orientation="horizontal",
-            height=80
+            orientation="vertical",
+            label_text="Languages"
         )
-        self.language_scroll_frame.grid(row=0, column=1, padx=20, pady=15, sticky="ew")
+        self.language_scroll_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=(0,10), sticky="nsew")
+        self.language_frame.grid_rowconfigure(1, weight=1)
         
         self.language_buttons = []
         for i, (display_name, lang_code) in enumerate(self.language_options):
@@ -240,16 +323,15 @@ class App(customtkinter.CTk):
                 corner_radius=20,
                 font=("Arial", 12)
             )
-            button.grid(row=0, column=i, padx=5, pady=10, sticky="ew")
+            button.pack(fill="x", padx=10, pady=5)
             self.language_buttons.append((button, lang_code))
         
-        # Set initial language selection
-        self.set_language("English")
+        self.update_language_button_styles()
 
-    def create_transcription_area(self):
+    def create_transcription_area(self, parent_frame):
         """Creates the transcription display area."""
-        self.transcription_frame = customtkinter.CTkFrame(self.content_frame)
-        self.transcription_frame.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="nsew")
+        self.transcription_frame = customtkinter.CTkFrame(parent_frame)
+        self.transcription_frame.grid(row=1, column=0, sticky="nsew")
         self.transcription_frame.grid_columnconfigure(0, weight=1)
         self.transcription_frame.grid_rowconfigure(1, weight=1)
         
@@ -264,6 +346,15 @@ class App(customtkinter.CTk):
             font=("Arial", 14, "bold")
         )
         self.transcription_title.grid(row=0, column=0, padx=20, pady=15, sticky="w")
+
+        # Status indicator for transcription result
+        self.transcription_status_label = customtkinter.CTkLabel(
+            self.transcription_header,
+            text="●",
+            font=("Arial", 18, "bold"),
+            text_color="gray50"
+        )
+        self.transcription_status_label.grid(row=0, column=1, padx=10, pady=15, sticky="w")
         
         # Copy button
         self.copy_button = customtkinter.CTkButton(
@@ -394,12 +485,19 @@ class App(customtkinter.CTk):
 
     def set_language(self, language):
         """Sets the selected language and updates button appearance."""
-        self.language_var.set(language)
-        print(f"Selected language: {language}")
+        if language in self.selected_languages:
+            if len(self.selected_languages) > 1: # Prevent removing the last language
+                self.selected_languages.remove(language)
+        else:
+            self.selected_languages.append(language)
         
-        # Update button appearances
+        self.config_manager.set_setting('selected_languages', self.selected_languages)
+        self.update_language_button_styles()
+
+    def update_language_button_styles(self):
+        """Updates the appearance of language buttons based on current selections."""
         for button, lang_code in self.language_buttons:
-            if lang_code == language:
+            if lang_code in self.selected_languages:
                 button.configure(fg_color=("#1f538d", "#14375e"))
             else:
                 button.configure(fg_color=("gray75", "gray25"))
@@ -408,6 +506,20 @@ class App(customtkinter.CTk):
         """Starts the audio recording."""
         if not self.gemini_client:
             self.update_transcription_text("❌ Error: Gemini client not initialized. Check API Key.")
+            return
+
+        try:
+            self.p_audio = pyaudio.PyAudio()
+            self.stream = self.p_audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=44100,
+                input=True,
+                frames_per_buffer=1024
+            )
+        except Exception as e:
+            messagebox.showerror("Audio Error", f"Could not start recording. Please check your microphone. Error: {e}")
+            self.update_status("Audio device error", "red")
             return
 
         self.recording = True
@@ -421,14 +533,6 @@ class App(customtkinter.CTk):
         self.update_transcription_text("🎤 Recording in progress...\n\nSpeak clearly into your microphone.")
 
         self.audio_frames = []
-        self.p_audio = pyaudio.PyAudio()
-
-        self.stream = self.p_audio.open(format=pyaudio.paInt16,
-                                         channels=1,
-                                         rate=44100,
-                                         input=True,
-                                         frames_per_buffer=1024)
-        
         self.record_thread = threading.Thread(target=self.record_audio, daemon=True)
         self.record_thread.start()
 
@@ -466,24 +570,22 @@ class App(customtkinter.CTk):
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
                 temp_file_path = temp_audio_file.name
-                with wave.open(temp_audio_file, 'wb') as wave_file:
+                with wave.open(temp_file_path, 'wb') as wave_file:
                     wave_file.setnchannels(1)
                     wave_file.setsampwidth(self.p_audio.get_sample_size(pyaudio.paInt16))
                     wave_file.setframerate(44100)
                     wave_file.writeframes(b''.join(self.audio_frames))
         except Exception as e:
-            print(f"Error saving temporary audio file: {e}")
-            self.update_transcription_text(f"❌ Error saving audio: {e}")
-            self.update_status("Error", "red")
+            messagebox.showerror("File Error", f"Could not save the recorded audio file. Error: {e}")
+            self.update_status("File save error", "red")
             return
 
         threading.Thread(target=self.transcribe_audio, args=(temp_file_path,), daemon=True).start()
 
-    @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def transcribe_audio(self, file_path):
-        """Transcribes the audio file using the Gemini API."""
+        """Transcribes the audio file using the Gemini API with retry logic and displays errors instead of exiting."""
         if not self.gemini_client:
-            self.update_transcription_text("❌ Error: Gemini client not initialized.")
+            self.update_transcription_text("❌ Error: Gemini client not initialized. Check API Key.")
             self.update_status("Error", "red")
             return
 
@@ -491,60 +593,75 @@ class App(customtkinter.CTk):
         self.update_transcription_text("☁️ Uploading audio to Gemini AI...\n\nThis may take a few moments.")
 
         try:
-            uploaded_file = self.gemini_client.files.upload(file=file_path)
             self.update_status("Transcribing...", "blue")
             self.update_transcription_text("🤖 AI is analyzing your audio...\n\nGenerating transcription...")
+            
+            response_text = self._perform_transcription(file_path)
 
-            language = self.language_var.get()
-            prompt = (f"Generate a transcript of the speech in {language}, "
-                      f"generate everything in one paragraph without timestamps.")
-
-            response = self.gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[prompt, uploaded_file],
-            )
-
-            self.gemini_client.files.delete(name=uploaded_file.name)
-
-            if response.text:
-                self.update_transcription_text(f"📝 Transcription Complete:\n\n{response.text}")
+            if response_text:
+                self.update_transcription_text(response_text)
+                self.update_transcription_status("green")
                 self.update_status("Complete", "green")
             else:
                 self.update_transcription_text("❌ Transcription failed: No text in response.")
+                self.update_transcription_status("red")
                 self.update_status("Failed", "red")
 
-        except Exception as e:
-            error_message = f"❌ An error occurred during transcription: {e}"
+        except Exception as err:
+            error_message = f"❌ An error occurred during transcription: {err}"
             self.update_transcription_text(error_message)
+            self.update_transcription_status("red")
             self.update_status("Error", "red")
-            # Show an error message box to the user
             messagebox.showerror(
                 "Transcription Failed",
                 f"Sorry, the audio could not be transcribed after several attempts.\n\n"
-                f"Error: {e}\n\n"
+                f"Error: {err}\n\n"
                 f"The recorded audio has been saved at:\n{file_path}"
             )
 
+    @retry(stop_max_attempt_number=3, wait_fixed=2000)
+    def _perform_transcription(self, file_path):
+        """Performs the actual transcription with the Gemini API and includes retry logic."""
+        uploaded_file = self.gemini_client.files.upload(file=file_path)
+
+        try:
+            languages = ", ".join(self.selected_languages) if self.selected_languages else "the detected language"
+            prompt_template = self.prompts.get(self.selected_prompt, list(self.prompts.values())[0])
+            prompt = prompt_template.format(languages=languages)
+
+            response = self.gemini_client.models.generate_content(
+                model="gemini-1.5-flash",
+                contents=[prompt, uploaded_file],
+            )
+            return response.text
+        finally:
+            self.gemini_client.files.delete(name=uploaded_file.name)
+
+    def update_transcription_status(self, color: str):
+        """Update transcription status indicator dot color."""
+        color_map = {
+            "green": "#2fa572",
+            "red": "#fa5252",
+            "orange": "#fd7e14",
+            "blue": "#339af0",
+            "gray": "gray50",
+        }
+        self.transcription_status_label.configure(text_color=color_map.get(color, "gray50"))
+
     def copy_transcription(self):
-        """Copies the transcription text to clipboard."""
+        """Copies the transcription text (excluding status icons) to clipboard."""
         text = self.transcription_textbox.get("1.0", tk.END).strip()
-        if text and not text.startswith(("🎤", "⏳", "☁️", "🤖", "❌", "⚠️")):
-            # Remove the "📝 Transcription Complete:" prefix if present
-            if text.startswith("📝 Transcription Complete:"):
-                text = text.replace("📝 Transcription Complete:\n\n", "")
-            
-            self.clipboard_clear()
-            self.clipboard_append(text)
-            self.update_status("Copied to clipboard", "green")
-            
-            # Reset status after 2 seconds
-            self.after(2000, lambda: self.update_status("Ready", "gray"))
+        if not text or text.startswith(("🎤", "⏳", "☁️", "🤖", "❌", "⚠️")):
+            return
+        self.clipboard_clear()
+        self.clipboard_append(text)
+        self.update_status("Copied to clipboard", "green")
+        self.after(2000, lambda: self.update_status("Ready"))
 
     def update_transcription_text(self, text):
         """Thread-safe update of the transcription textbox."""
         if threading.current_thread() is not threading.main_thread():
             self.after(0, lambda t=text: self.update_transcription_text(t))
-            return
         
         self.transcription_textbox.configure(state="normal")
         self.transcription_textbox.delete("1.0", tk.END)

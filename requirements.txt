@@ -4,3 +4,4 @@ google-genai
 pydantic
 python-dotenv
 retrying
+pyinstaller
