@@ -8,11 +8,11 @@
 
 **We've supercharged your transcription experience!** 🎉
 
+🎯 **Dual Modes** - Choose between **Transcribe** for real-time transcription or **Transcribe and Plan** for transcription plus an organized version of the transcription in form of a plan.
+
 ✨ **Sleek New Interface** - Enjoy a fresh, modern design that's as beautiful as it is functional
 
-🌍 **Multi-Language Mastery** - Now supporting multiple languages! Transcribe in your preferred language with ease
-
-🎯 **Dual Modes** - Choose between **Live Transcribe** for real-time transcription or **Plan Mode** for scheduled recordings
+🌍 **Multi-Language Mastery** - Now supporting transcribe mix of languages!
 
 ⚡ **Faster, Smoother, Better** - Optimized performance for a seamless user experience
 
