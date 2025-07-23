@@ -1,0 +1,51 @@
+# Exclude development and build files
+.venv/
+linux/test_env/
+linux/.venv/
+linux/build/
+linux/dist/
+linux/__pycache__/
+linux/HANDOFF.md
+.open-transcribe-setup-complete
+CLAUDE.md
+
+# Exclude git files
+.git/
+.gitignore
+
+# Exclude development files
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+.tox/
+venv/
+env/
+
+# Exclude temporary files
+*.tmp
+*.temp
+*.log
+.DS_Store
+Thumbs.db
+
+# Exclude editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Exclude other package managers
+node_modules/
+.yarn/
+package-lock.json
+yarn.lock
+
+# Exclude test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Keep only essential files for NPM package

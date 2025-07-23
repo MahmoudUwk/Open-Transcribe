@@ -3,6 +3,8 @@ A simple application for recording audio and transcribing it using Google's Gemi
 """
 import json
 import os
+import platform
+import subprocess
 import tempfile
 import threading
 import time
@@ -11,13 +13,33 @@ from tkinter import messagebox, ttk
 import wave
 
 import customtkinter
-import pyaudio
 from google import genai
 from retrying import retry
+
+# Try to import PyAudio, but don't fail if it's not available
+try:
+    import pyaudio
+    PYAUDIO_AVAILABLE = True
+except ImportError:
+    PYAUDIO_AVAILABLE = False
+    pyaudio = None
 
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("blue")
+
+# Configure scaling based on platform
+if platform.system() == "Linux":
+    # Set moderate scaling for Linux to fix small GUI issue
+    customtkinter.set_widget_scaling(1.3)  # 30% larger widgets
+    customtkinter.set_window_scaling(1.2)  # 20% larger window
+elif platform.system() == "Windows":
+    # Windows typically handles DPI scaling better
+    customtkinter.set_widget_scaling(1.0)
+    customtkinter.set_window_scaling(1.0)
+else:  # macOS
+    customtkinter.set_widget_scaling(1.0)
+    customtkinter.set_window_scaling(1.0)
 
 PROMPTS = {
     "Transcribe": "Generate a transcript of the speech in {languages}. Generate everything in one paragraph without timestamps.",
@@ -97,6 +119,174 @@ def save_api_key(api_key):
         print("API key not provided, not saving.")
 
 
+class CrossPlatformAudioManager:
+    """Manages audio recording across Windows and Linux platforms."""
+    
+    def __init__(self):
+        self.is_windows = platform.system() == 'Windows'
+        self.recording = False
+        self.audio_frames = []
+        self.p_audio = None
+        self.stream = None
+        self.record_process = None
+        self.temp_audio_file = None
+        self.audio_method = None
+        
+        # Initialize audio method
+        self._detect_audio_method()
+    
+    def _detect_audio_method(self):
+        """Detect the best audio recording method for the platform."""
+        if self.is_windows:
+            if PYAUDIO_AVAILABLE:
+                self.audio_method = 'pyaudio'
+            else:
+                self.audio_method = 'none'
+        else:  # Linux/macOS
+            # Try to use PyAudio first, but fall back to system tools if it causes issues
+            if PYAUDIO_AVAILABLE:
+                try:
+                    # Test if PyAudio works without crashing
+                    test_p = pyaudio.PyAudio()
+                    test_p.terminate()
+                    self.audio_method = 'pyaudio'
+                except:
+                    self.audio_method = self._find_system_audio_tool()
+            else:
+                self.audio_method = self._find_system_audio_tool()
+    
+    def _find_system_audio_tool(self):
+        """Find available system audio recording tools."""
+        tools = ['arecord', 'parecord', 'ffmpeg']
+        for tool in tools:
+            try:
+                subprocess.run(['which', tool], capture_output=True, check=True)
+                return tool
+            except:
+                continue
+        return 'none'
+    
+    def can_record(self):
+        """Check if audio recording is available."""
+        return self.audio_method != 'none'
+    
+    def get_audio_method_name(self):
+        """Get human-readable name of audio method."""
+        methods = {
+            'pyaudio': 'PyAudio',
+            'arecord': 'ALSA (arecord)',
+            'parecord': 'PulseAudio (parecord)',
+            'ffmpeg': 'FFmpeg',
+            'none': 'No audio recording available'
+        }
+        return methods.get(self.audio_method, 'Unknown')
+    
+    def start_recording(self):
+        """Start recording using the best available method."""
+        if not self.can_record():
+            raise Exception("No audio recording method available")
+        
+        self.recording = True
+        self.audio_frames = []
+        
+        if self.audio_method == 'pyaudio':
+            return self._start_pyaudio_recording()
+        else:
+            return self._start_system_recording()
+    
+    def _start_pyaudio_recording(self):
+        """Start recording using PyAudio."""
+        try:
+            self.p_audio = pyaudio.PyAudio()
+            self.stream = self.p_audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=44100,
+                input=True,
+                frames_per_buffer=1024
+            )
+            return True
+        except Exception as e:
+            if self.p_audio:
+                self.p_audio.terminate()
+            raise Exception(f"PyAudio recording failed: {e}")
+    
+    def _start_system_recording(self):
+        """Start recording using system tools."""
+        self.temp_audio_file = tempfile.mktemp(suffix='.wav')
+        
+        try:
+            if self.audio_method == 'arecord':
+                self.record_process = subprocess.Popen([
+                    'arecord', '-f', 'S16_LE', '-c', '1', '-r', '44100',
+                    self.temp_audio_file
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif self.audio_method == 'parecord':
+                self.record_process = subprocess.Popen([
+                    'parecord', '--format=s16le', '--channels=1', '--rate=44100',
+                    self.temp_audio_file
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif self.audio_method == 'ffmpeg':
+                self.record_process = subprocess.Popen([
+                    'ffmpeg', '-f', 'alsa', '-i', 'default',
+                    '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '1', '-y',
+                    self.temp_audio_file
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            return True
+        except Exception as e:
+            raise Exception(f"System recording failed: {e}")
+    
+    def record_frame(self):
+        """Record a single frame (only used with PyAudio)."""
+        if self.audio_method == 'pyaudio' and self.stream and self.recording:
+            try:
+                data = self.stream.read(1024, exception_on_overflow=False)
+                self.audio_frames.append(data)
+            except (IOError, OSError):
+                pass
+    
+    def stop_recording(self):
+        """Stop recording and return the audio file path."""
+        self.recording = False
+        
+        if self.audio_method == 'pyaudio':
+            return self._stop_pyaudio_recording()
+        else:
+            return self._stop_system_recording()
+    
+    def _stop_pyaudio_recording(self):
+        """Stop PyAudio recording and save to file."""
+        if self.stream:
+            self.stream.stop_stream()
+            self.stream.close()
+        if self.p_audio:
+            self.p_audio.terminate()
+        
+        # Save audio to file
+        temp_file_path = tempfile.mktemp(suffix='.wav')
+        try:
+            with wave.open(temp_file_path, 'wb') as wave_file:
+                wave_file.setnchannels(1)
+                wave_file.setsampwidth(2)  # 16-bit = 2 bytes
+                wave_file.setframerate(44100)
+                wave_file.writeframes(b''.join(self.audio_frames))
+            return temp_file_path
+        except Exception as e:
+            raise Exception(f"Failed to save audio file: {e}")
+    
+    def _stop_system_recording(self):
+        """Stop system recording."""
+        if self.record_process:
+            self.record_process.terminate()
+            self.record_process.wait()
+        
+        if self.temp_audio_file and os.path.exists(self.temp_audio_file):
+            return self.temp_audio_file
+        else:
+            raise Exception("No audio file was created")
+
+
 # pylint: disable=too-many-instance-attributes
 class App(customtkinter.CTk):
     """The main application class for the transcriber."""
@@ -112,8 +302,14 @@ class App(customtkinter.CTk):
         self.selected_prompt = self.config_manager.get_setting('selected_prompt', list(self.prompts.keys())[0])
 
         self.title("🎙️ Open-Transcribe")
-        self.geometry("900x700")
-        self.minsize(800, 600)
+        
+        # Set window size based on platform scaling
+        if platform.system() == "Linux":
+            self.geometry("950x750")  # Moderate size for Linux scaling
+            self.minsize(800, 650)
+        else:
+            self.geometry("900x700")
+            self.minsize(800, 600)
         
         # Configure grid weights for responsive design
         self.grid_columnconfigure(0, weight=1)
@@ -136,14 +332,15 @@ class App(customtkinter.CTk):
 
         # Initialize recording variables
         self.recording = False
-        self.audio_frames = []
-        self.p_audio = None
-        self.stream = None
         self.gemini_client = None
         self.record_thread = None
         self.pulse_animation = None
+        
+        # Initialize cross-platform audio manager
+        self.audio_manager = CrossPlatformAudioManager()
 
         self._initialize_client()
+        self._check_audio_support()
 
     def create_header(self):
         """Creates the header section with title and branding."""
@@ -435,6 +632,24 @@ class App(customtkinter.CTk):
             )
             self.record_button.configure(state="disabled")
             self.update_status("No API key", "red")
+    
+    def _check_audio_support(self):
+        """Check audio recording support and update UI accordingly."""
+        if not self.audio_manager.can_record():
+            self.update_transcription_text(
+                "⚠️ Audio recording not available on this system.\n\n"
+                f"Audio method: {self.audio_manager.get_audio_method_name()}\n\n"
+                "Please check that:\n"
+                "• Your microphone is connected\n"
+                "• Audio drivers are installed\n"
+                "• Required audio packages are installed\n\n"
+                "On Linux: sudo apt install alsa-utils or pulseaudio-utils"
+            )
+            self.record_button.configure(state="disabled")
+            self.update_status("No audio support", "red")
+        else:
+            audio_method = self.audio_manager.get_audio_method_name()
+            self.update_status(f"Ready ({audio_method})", "green")
 
     def update_status(self, message, color="gray"):
         """Updates the status indicator."""
@@ -508,15 +723,12 @@ class App(customtkinter.CTk):
             self.update_transcription_text("❌ Error: Gemini client not initialized. Check API Key.")
             return
 
+        if not self.audio_manager.can_record():
+            self.update_transcription_text("❌ Error: No audio recording method available.")
+            return
+
         try:
-            self.p_audio = pyaudio.PyAudio()
-            self.stream = self.p_audio.open(
-                format=pyaudio.paInt16,
-                channels=1,
-                rate=44100,
-                input=True,
-                frames_per_buffer=1024
-            )
+            self.audio_manager.start_recording()
         except Exception as e:
             messagebox.showerror("Audio Error", f"Could not start recording. Please check your microphone. Error: {e}")
             self.update_status("Audio device error", "red")
@@ -532,18 +744,15 @@ class App(customtkinter.CTk):
         self.start_pulse_animation()
         self.update_transcription_text("🎤 Recording in progress...\n\nSpeak clearly into your microphone.")
 
-        self.audio_frames = []
-        self.record_thread = threading.Thread(target=self.record_audio, daemon=True)
-        self.record_thread.start()
+        # Start recording thread only for PyAudio method
+        if self.audio_manager.audio_method == 'pyaudio':
+            self.record_thread = threading.Thread(target=self.record_audio, daemon=True)
+            self.record_thread.start()
 
     def record_audio(self):
-        """Records audio from the stream."""
+        """Records audio from the stream (PyAudio only)."""
         while self.recording:
-            try:
-                data = self.stream.read(1024)
-                self.audio_frames.append(data)
-            except (IOError, OSError):
-                pass
+            self.audio_manager.record_frame()
 
     def stop_recording(self):
         """Stops the audio recording and starts transcription."""
@@ -557,67 +766,63 @@ class App(customtkinter.CTk):
         self.update_status("Processing...", "orange")
         self.update_transcription_text("⏳ Recording stopped. Processing audio...\n\nPlease wait while we transcribe your audio.")
 
-        if self.stream:
-            self.stream.stop_stream()
-            self.stream.close()
-        if self.p_audio:
-            self.p_audio.terminate()
-
+        # Wait for recording thread to finish (PyAudio only)
         if self.record_thread and self.record_thread.is_alive():
             self.record_thread.join(timeout=1)
         self.record_thread = None
 
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
-                temp_file_path = temp_audio_file.name
-                with wave.open(temp_file_path, 'wb') as wave_file:
-                    wave_file.setnchannels(1)
-                    wave_file.setsampwidth(self.p_audio.get_sample_size(pyaudio.paInt16))
-                    wave_file.setframerate(44100)
-                    wave_file.writeframes(b''.join(self.audio_frames))
+            # Stop recording and get the audio file path
+            temp_file_path = self.audio_manager.stop_recording()
+            threading.Thread(target=self.transcribe_audio, args=(temp_file_path,), daemon=True).start()
         except Exception as e:
-            messagebox.showerror("File Error", f"Could not save the recorded audio file. Error: {e}")
-            self.update_status("File save error", "red")
-            return
-
-        threading.Thread(target=self.transcribe_audio, args=(temp_file_path,), daemon=True).start()
+            messagebox.showerror("Recording Error", f"Could not save the recorded audio file. Error: {e}")
+            self.update_status("Recording save error", "red")
 
     def transcribe_audio(self, file_path):
         """Transcribes the audio file using the Gemini API with retry logic and displays errors instead of exiting."""
-        if not self.gemini_client:
-            self.update_transcription_text("❌ Error: Gemini client not initialized. Check API Key.")
-            self.update_status("Error", "red")
-            return
-
-        self.update_status("Uploading...", "blue")
-        self.update_transcription_text("☁️ Uploading audio to Gemini AI...\n\nThis may take a few moments.")
-
         try:
-            self.update_status("Transcribing...", "blue")
-            self.update_transcription_text("🤖 AI is analyzing your audio...\n\nGenerating transcription...")
-            
-            response_text = self._perform_transcription(file_path)
+            if not self.gemini_client:
+                self.after(0, lambda: self.update_transcription_text("❌ Error: Gemini client not initialized. Check API Key."))
+                self.after(0, lambda: self.update_status("Error", "red"))
+                return
 
-            if response_text:
-                self.update_transcription_text(response_text)
-                self.update_transcription_status("green")
-                self.update_status("Complete", "green")
-            else:
-                self.update_transcription_text("❌ Transcription failed: No text in response.")
-                self.update_transcription_status("red")
-                self.update_status("Failed", "red")
+            self.after(0, lambda: self.update_status("Uploading...", "blue"))
+            self.after(0, lambda: self.update_transcription_text("☁️ Uploading audio to Gemini AI...\n\nThis may take a few moments."))
 
-        except Exception as err:
-            error_message = f"❌ An error occurred during transcription: {err}"
-            self.update_transcription_text(error_message)
-            self.update_transcription_status("red")
-            self.update_status("Error", "red")
-            messagebox.showerror(
-                "Transcription Failed",
-                f"Sorry, the audio could not be transcribed after several attempts.\n\n"
-                f"Error: {err}\n\n"
-                f"The recorded audio has been saved at:\n{file_path}"
-            )
+            try:
+                self.after(0, lambda: self.update_status("Transcribing...", "blue"))
+                self.after(0, lambda: self.update_transcription_text("🤖 AI is analyzing your audio...\n\nGenerating transcription..."))
+                
+                response_text = self._perform_transcription(file_path)
+
+                if response_text:
+                    self.after(0, lambda: self.update_transcription_text(response_text))
+                    self.after(0, lambda: self.update_transcription_status("green"))
+                    self.after(0, lambda: self.update_status("Complete", "green"))
+                else:
+                    self.after(0, lambda: self.update_transcription_text("❌ Transcription failed: No text in response."))
+                    self.after(0, lambda: self.update_transcription_status("red"))
+                    self.after(0, lambda: self.update_status("Failed", "red"))
+
+            except Exception as err:
+                error_message = f"❌ An error occurred during transcription: {err}"
+                self.after(0, lambda: self.update_transcription_text(error_message))
+                self.after(0, lambda: self.update_transcription_status("red"))
+                self.after(0, lambda: self.update_status("Error", "red"))
+                self.after(0, lambda: messagebox.showerror(
+                    "Transcription Failed",
+                    f"Sorry, the audio could not be transcribed after several attempts.\n\n"
+                    f"Error: {err}\n\n"
+                    f"The recorded audio has been saved at:\n{file_path}"
+                ))
+        finally:
+            # Clean up temporary audio file
+            try:
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as cleanup_err:
+                print(f"Warning: Could not clean up temporary file {file_path}: {cleanup_err}")
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def _perform_transcription(self, file_path):
@@ -662,11 +867,15 @@ class App(customtkinter.CTk):
         """Thread-safe update of the transcription textbox."""
         if threading.current_thread() is not threading.main_thread():
             self.after(0, lambda t=text: self.update_transcription_text(t))
+            return
         
-        self.transcription_textbox.configure(state="normal")
-        self.transcription_textbox.delete("1.0", tk.END)
-        self.transcription_textbox.insert("1.0", text)
-        self.transcription_textbox.configure(state="disabled")
+        try:
+            self.transcription_textbox.configure(state="normal")
+            self.transcription_textbox.delete("1.0", tk.END)
+            self.transcription_textbox.insert("1.0", text)
+            self.transcription_textbox.configure(state="disabled")
+        except Exception as e:
+            print(f"Warning: Could not update transcription text: {e}")
 
 
 if __name__ == "__main__":

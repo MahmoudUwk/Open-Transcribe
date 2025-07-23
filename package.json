@@ -1,0 +1,62 @@
+{
+  "name": "open-transcribe",
+  "version": "1.2.4",
+  "description": "AI-Powered Audio Transcription Desktop Application",
+  "main": "bin/open-transcribe",
+  "bin": {
+    "open-transcribe": "./bin/open-transcribe"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "preuninstall": "node scripts/preuninstall.js",
+    "start": "node bin/open-transcribe",
+    "build-linux": "cd linux && ./build.sh",
+    "build-windows": "pyinstaller OpenTranscribe.spec",
+    "test": "node scripts/test-installation.js"
+  },
+  "keywords": [
+    "transcription",
+    "audio",
+    "speech-to-text",
+    "ai",
+    "voice",
+    "gemini",
+    "desktop",
+    "cross-platform"
+  ],
+  "author": "Mahmoud Sallam <mahmouduwk338@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/MahmoudUwk/Open-Transcribe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MahmoudUwk/Open-Transcribe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MahmoudUwk/Open-Transcribe/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "os": [
+    "linux",
+    "win32",
+    "darwin"
+  ],
+  "files": [
+    "bin/",
+    "scripts/",
+    "src/",
+    "linux/",
+    "requirements.txt",
+    "app.png",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {},
+  "devDependencies": {},
+  "preferGlobal": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}

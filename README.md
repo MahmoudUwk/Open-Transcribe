@@ -8,6 +8,8 @@
 
 **We've supercharged your transcription experience!** 🎉
 
+🐧 **Linux Support** - Now fully supported on Linux with optimized GUI scaling
+
 🎯 **Dual Modes** - Choose between **Transcribe** for real-time transcription or **Transcribe and Plan** for transcription plus an organized version of the transcription in form of a plan.
 
 ✨ **Sleek New Interface** - Enjoy a fresh, modern design that's as beautiful as it is functional
@@ -19,7 +21,7 @@
 *The future of transcription is here, and it's more powerful than ever!*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue.svg)](https://www.npmjs.com/package/open-transcribe)
 [![Python](https://img.shields.io/badge/Python-3.x-green.svg)](https://www.python.org/)
 [![Powered by](https://img.shields.io/badge/Powered%20by-Gemini%20AI-orange.svg)](https://ai.google.dev/)
 
@@ -61,9 +63,43 @@ Open-Transcribe is provided "as-is" and is currently in its early development st
 
 ## 📥 Quick & Easy Installation
 
-### 🎯 **One-Click Install** *(Recommended for Everyone)*
+### 🚀 **Cross-Platform Install** *(Recommended)*
 
-Getting started takes less than 2 minutes! 
+**One command installation using npm:**
+
+```bash
+npm install -g open-transcribe
+```
+
+Then launch with:
+```bash
+open-transcribe
+```
+
+✅ **Auto-installs Python dependencies**  
+✅ **Creates desktop shortcuts**  
+✅ **Works on Windows and Linux**
+
+### 🐧 **Linux Installation**
+
+Open-Transcribe now has **full Linux support** with optimized GUI scaling for Ubuntu/Debian systems:
+
+```bash
+# Install globally via npm
+npm install -g open-transcribe
+
+# Launch the application
+open-transcribe
+```
+
+**Linux Features:**
+- ✅ Optimized GUI scaling (1.3x widgets, 1.2x window)
+- ✅ ALSA/PulseAudio audio support with fallbacks
+- ✅ Desktop integration (.desktop file creation)
+- ✅ Automatic Python environment setup
+- ✅ Cross-platform audio recording
+
+### 🎯 **Windows Installer** *(Alternative Method)*
 
 1.  **📦 Download the Installer**
     ```
@@ -76,7 +112,7 @@ Getting started takes less than 2 minutes!
     - Follow the simple on-screen setup wizard
     - Launch Open-Transcribe from your Start Menu or Desktop shortcut
 
-3.  **🔑 Get Your FREE API Key (Gemini API)**
+### 🔑 **Get Your FREE API Key (Required for Both Methods)**
    - Visit [🌟 Google AI Studio](https://aistudio.google.com/apikey)
    - Sign in with Google (free account)
    - Generate your API key
