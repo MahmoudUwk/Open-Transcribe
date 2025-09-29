@@ -2,6 +2,10 @@
 
 [https://open-transcribe.netlify.app](https://open-transcribe.netlify.app) delivers Open-Transcribe as a browser-based experience. Record audio, run Gemini-powered prompts, and review transcripts directly in the cloud—no desktop install required.
 
+<p align="center">
+  <img src="app.png" alt="Open-Transcribe UI" width="520" />
+</p>
+
 ## 🌐 Highlights
 
 - **Instant access**: Works anywhere a modern browser runs (Chrome, Edge, Firefox). Microphone prompts are handled by the browser’s permission system.
