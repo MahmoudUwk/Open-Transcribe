@@ -3,7 +3,7 @@
 use std::{fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 const PREFERENCES_FILE: &str = "preferences.json";
 

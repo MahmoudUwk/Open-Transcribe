@@ -532,9 +532,17 @@ export function App({
                   </a>
                 </div>
               )}
-              {prefsError && (
+              {recorderError && (
                 <div className="alert error" role="alert">
-                  {prefsError}
+                  <strong>Recording failed</strong>
+                  <span>
+                    {recorderError === "Error"
+                      ? "Microphone access was denied or not available. Check OS permissions and ensure your input device is working."
+                      : recorderError}
+                  </span>
+                  <p className="status-note">
+                    Check microphone permissions for Open-Transcribe and ensure you have an input device available.
+                  </p>
                 </div>
               )}
               {prefsMessage && !prefsError && (
