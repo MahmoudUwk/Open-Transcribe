@@ -1,85 +1,68 @@
-# Open-Transcribe 2.0
+# Open-Transcribe (Web Edition)
 
-The Tauri-powered desktop rewrite of Open-Transcribe now lives in the `src/` directory. This root repository hosts project assets, license text, CI configuration, and the modern desktop client source. Version **2.0.0** introduces a fully native experience with packaging support for Linux, Windows, and macOS.
+[https://open-transcribe.netlify.app](https://open-transcribe.netlify.app) delivers Open-Transcribe as a browser-based experience. Record audio, run Gemini-powered prompts, and review transcripts directly in the cloud—no desktop install required.
 
-## 📁 Repository layout
+## 🌐 Highlights
 
-- **`src/`** – React/Vite + Tauri desktop application (run `npm install` here)
-- **`app.png`** – Product artwork used in documentation/ installers
-- **`LICENSE`** – MIT license for the entire project
-- **`README.md`** – You are here
+- **Instant access**: Works anywhere a modern browser runs (Chrome, Edge, Firefox). Microphone prompts are handled by the browser’s permission system.
+- **Gemini-ready**: Paste your Gemini API key once; it’s stored securely in `localStorage` on that device.
+- **Responsive UI**: Polished layout optimized for both laptops and smaller screens.
+- **Privacy-aware**: Audio is only uploaded when you initiate transcription. Everything else stays in the browser session.
 
-The legacy npm CLI package has been retired; all active development targets the Tauri desktop app inside `src/`.
+## 📁 Repository Layout
 
-## 🔧 Quick start
+- **`src/`** – React + Vite application source and tests
+- **`netlify.toml`** – Netlify build configuration (`npm run build`, publish `src/dist`)
+- **`app.png`** – Marketing imagery
+- **`LICENSE`** – MIT license
+
+## 🚀 Getting Started (local dev)
 
 ```bash
 git clone https://github.com/MahmoudUwk/Open-Transcribe.git
-cd Open-Transcribe
-npm run install          # executes `npm install` inside ./src
-npm run tauri:dev        # launches the desktop shell in development mode
+cd Open-Transcribe/src
+npm install
+npm run dev
 ```
 
-Root `package.json` scripts simply proxy into `src/`:
+Visit the printed URL (default `http://localhost:5173/`) and allow microphone access when prompted.
 
-- `npm run dev` → `cd src && npm run dev`
-- `npm run build` → `cd src && npm run build`
-- `npm run tauri:build` → `cd src && npm run tauri build`
-- `npm run check` → `cd src && npm run check`
-
-## 📦 Packaging
-
-All packaging logic is defined under `src/src-tauri/` (`tauri.conf.json`, `Cargo.toml`). The bundle targets include `.AppImage`, `.deb`, `.rpm`, `.msi`, `.nsis`, `.app`, and `.dmg`. Generate installers with:
+## 🛠️ Build for Production
 
 ```bash
-cd src
-npm run tauri build
+cd Open-Transcribe/src
+npm run build
 ```
 
-Artifacts appear under `src/src-tauri/target/release/`.
+Static assets are emitted to `src/dist/`. Deploy that folder to any static host (Netlify, Vercel, GitHub Pages, Cloudflare Pages, etc.). The Netlify workflow is preconfigured:
 
-## 📚 Documentation
+- `netlify init` (done) links to Netlify CI/CD.
+- `netlify deploy --prod --dir=dist` publishes the latest build.
 
-Detailed developer and user-facing instructions, including platform-specific install commands and Gemini API setup, are in `src/README.md`. Refer to that file for:
+## 🔐 Storing API Keys
 
-- Prerequisites (Node, Rust toolchain, Tauri requirements)
-- Local development workflow
-- Testing (Vitest, Playwright)
-- Packaging / signing guidance
-- One-line installers per platform
+- Each browser profile saves its Gemini key in `localStorage`.
+- Users must re-enter the key when switching browsers or devices.
+- Consider adding export/import features if you need cross-device sync.
 
-## ✅ Status
+## 🧪 Testing & Linting
 
-- Tauri workspace version: **2.0.0** (`src/package.json`)
-- Production bundle verified: `npm run build` succeeds from both `src/` and repository root
-- All previous Python/PyInstaller assets were removed in favor of the Tauri rewrite
+```bash
+npm run lint
+npm run test        # Vitest unit tests
+npm run test:e2e    # Playwright smoke tests (install Playwright browsers first)
+```
 
 ## 🤝 Contributing
 
-Pull requests are welcome! Please run `npm run check` (root or inside `src/`) before opening a PR. See `src/README.md` for contribution guidelines and testing instructions.
-
----
-
-For questions, feature requests, or bug reports, open an issue on GitHub.
-
----
+- Fork the repo, create a branch, and open a pull request.
+- Run `npm run lint` and `npm run test` before submitting.
+- UI changes benefit from screenshots or short videos in the PR description.
 
 ## 📄 License
 
-This project is proudly licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-**Translation:** You can use, modify, and distribute this software freely! 🎉
+Released under the [MIT License](LICENSE). Feel free to remix and build on Open-Transcribe—just keep the notice intact.
 
 ---
 
-<div align="center">
-
-**🚀 Ready to transform your voice into text?**
-
-[Download Open-Transcribe Now](#-quick--easy-installation) and experience the future of speech transcription!
-
-**Made with ❤️ by the Open-Transcribe community**
-
-*Don't forget to ⭐ star this repository if you find it useful!*
-
-</div>
+Share feedback or ideas via GitHub Issues. If the project helps you, a ⭐️ is always appreciated!

@@ -2,7 +2,5 @@ node_modules/
 dist/
 .vite/
 .DS_Store
-src-tauri/target/
-Cargo.lock
 playwright-report/
 test-results/

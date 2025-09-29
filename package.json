@@ -5,9 +5,7 @@
   "scripts": {
     "install": "cd src && npm install",
     "dev": "cd src && npm run dev",
-    "tauri:dev": "cd src && npm run tauri dev",
     "build": "cd src && npm run build",
-    "tauri:build": "cd src && npm run tauri build",
     "test": "cd src && npm run test",
     "lint": "cd src && npm run lint",
     "check": "cd src && npm run check"

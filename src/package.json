@@ -1,7 +1,7 @@
 {
   "name": "open-transcribe",
   "version": "2.0.0",
-  "description": "Tauri rewrite of Open-Transcribe",
+  "description": "Open-Transcribe web application",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,11 +12,9 @@
     "test": "vitest run --exclude tests/e2e/**",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run test",
-    "tauri": "tauri"
+    "check": "npm run lint && npm run test"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.5.3",
     "@google/genai": "^0.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -25,7 +23,6 @@
     "@types/jest": "^29.5.12",
     "@eslint/js": "^9.9.0",
     "@playwright/test": "^1.49.0",
-    "@tauri-apps/cli": "^1.5.9",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.1",
     "@types/node": "^20.14.2",

@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/tauri";
-
 export type Preferences = {
   model: string;
   prompt: string;
@@ -12,13 +10,6 @@ export type PreferencesManager = {
 };
 
 const STORAGE_KEY = "open-transcribe.preferences";
-
-function shouldFallback(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-  return error.message.includes("__TAURI_IPC__") || error.message.includes("tauri") || error.message.includes("IPC");
-}
 
 function loadFromLocalStorage(): Preferences | null {
   if (typeof window === "undefined" || !window.localStorage) {
@@ -48,27 +39,10 @@ function saveToLocalStorage(preferences: Preferences): void {
 }
 
 export async function loadPreferences(): Promise<Preferences | null> {
-  try {
-    const result = await invoke<Preferences | null>("load_preferences");
-    if (result) {
-      return result;
-    }
-  } catch (error) {
-    if (!shouldFallback(error)) {
-      throw error;
-    }
-  }
   return loadFromLocalStorage();
 }
 
 export async function savePreferences(preferences: Preferences): Promise<void> {
-  try {
-    await invoke("save_preferences", { preferences });
-  } catch (error) {
-    if (!shouldFallback(error)) {
-      throw error;
-    }
-  }
   saveToLocalStorage(preferences);
 }
 
