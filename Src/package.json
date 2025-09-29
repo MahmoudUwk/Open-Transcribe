@@ -1,0 +1,48 @@
+{
+  "name": "open-transcribe-tauri",
+  "version": "0.1.0",
+  "description": "Tauri rewrite of Open-Transcribe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run --exclude tests/e2e/**",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run test",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^1.5.3",
+    "@google/genai": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@eslint/js": "^9.9.0",
+    "@playwright/test": "^1.49.0",
+    "@tauri-apps/cli": "^1.5.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.1",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/user-event": "^14.6.1",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint": "^9.9.1",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.9.0",
+    "jsdom": "^24.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  }
+}

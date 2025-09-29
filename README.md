@@ -4,30 +4,24 @@
 
 **Transform Your Voice into Text with AI-Powered Precision**
 
-## 🚀 What's New in V1.2
+## 🚀 What's New in v1.2.8
 
 **We've supercharged your transcription experience!** 🎉
 
-🐧 **Linux Support** - Now fully supported on Linux with optimized GUI scaling
-
-🎯 **Dual Modes** - Choose between **Transcribe** for real-time transcription or **Transcribe and Plan** for transcription plus an organized version of the transcription in form of a plan.
-
-✨ **Sleek New Interface** - Enjoy a fresh, modern design that's as beautiful as it is functional
-
-🌍 **Multi-Language Mastery** - Now supporting transcribe mix of languages!
-
-⚡ **Faster, Smoother, Better** - Optimized performance for a seamless user experience
-
-*The future of transcription is here, and it's more powerful than ever!*
+- 🧩 **Cross-platform support** – One npm package for Windows & Linux
+- 📝 **Improved UI** – Bigger textbox with layout fixes
+- 🐧 **Full Linux support** – With optimized GUI scaling
+- 🎯 **Dual modes** – Transcribe or Transcribe + Plan
+- 🌍 **Multi-language** – Automatic language detection
+- ⚡ **Better performance** – Faster and smoother operation
+- 🛠️ **Improved PyAudio handling** – Better error handling and fallbacks
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue.svg)](https://www.npmjs.com/package/open-transcribe)
 [![Python](https://img.shields.io/badge/Python-3.x-green.svg)](https://www.python.org/)
 [![Powered by](https://img.shields.io/badge/Powered%20by-Gemini%20AI-orange.svg)](https://ai.google.dev/)
 
-*The ultimate free, open-source desktop application that revolutionizes how you capture and convert spoken words! Directly record audio within the app and get instant, on-the-fly transcriptions without the hassle of uploading files.*
-
-[📥 Download](#-quick--easy-installation) • [🚀 Features](#-why-choose-open-transcribe) • [💻 Build from Source](#-build-from-source) • [📖 Documentation](#-project-structure)
+*Free, open-source desktop app for instant speech-to-text conversion with Google Gemini AI.*
 
 </div>
 
@@ -39,19 +33,59 @@
 
 ---
 
+## 📥 Quick & Easy Installation
+
+### 🐧 Linux Installation (Recommended)
+
+Install globally via npm:
+```bash
+npm install -g open-transcribe
+```
+
+Launch the application:
+```bash
+open-transcribe
+```
+
+**Linux Features:**
+- ✅ Optimized GUI scaling
+- ✅ ALSA/PulseAudio support
+- ✅ Desktop integration
+- ✅ Automatic Python setup
+- ✅ Cross-platform audio recording
+
+### 🪟 Windows Installation
+
+Install globally via npm. The post-install script will automatically handle Python dependencies.
+```bash
+npm install -g open-transcribe
+```
+
+Launch the application:
+```bash
+open-transcribe
+```
+
+## 🎯 Prompt Options
+
+Open-Transcribe offers two powerful modes to suit your needs:
+
+1. **Transcribe (Autodetect languages)**
+   - Produces a verbatim transcription of your audio
+   - Automatically detects and transcribes all spoken languages
+   - Merges output into a clean, single paragraph
+
+2. **Transcribe and Plan (Add summary/action)**
+   - First transcribes the entire recording with language autodetection
+   - Then analyzes the transcript to produce a concise summary or action plan
+   - Presents the final output with separate "Transcription" and "Plan" sections
+
 ## 🌟 Why Choose Open-Transcribe?
 
-*   **100% Free Forever:** This application is entirely free and open-source, with no hidden costs. The Gemini API key, essential for its function, is also free to obtain, allowing for unlimited transcriptions.
-
-*   **Seamless On-the-Fly Transcription:** Forget uploading! Simply hit record in the app, capture your audio, and get instant transcriptions. It's incredibly convenient and eliminates extra steps.
-    *   **Use Cases:** Perfect for quickly transcribing:
-        *   **Meetings & Lectures:** Capture every word without frantic note-taking.
-        *   **Interviews:** Focus on the conversation, not the transcription process.
-        *   **Personal Notes:** Dictate thoughts and ideas, then convert them to text instantly.
-
-*   **Privacy First:** Your API key is stored securely on your device and is never transmitted externally. You retain full control over your data, and the application functions offline once set up.
-
-*   **Cutting-Edge Technology:** Leveraging Google's Gemini AI, Open-Transcribe delivers highly accurate, multi-language transcriptions through a user-friendly interface.
+*   **100% Free Forever:** Entirely free and open-source with no hidden costs
+*   **Seamless Transcription:** Record audio and get instant transcriptions without uploading
+*   **Privacy First:** Your API key is stored securely on your device
+*   **Cutting-Edge Technology:** Powered by Google's Gemini AI for accurate transcriptions
 
 ---
 
@@ -76,9 +110,9 @@ Then launch with:
 open-transcribe
 ```
 
-✅ **Auto-installs Python dependencies**  
-✅ **Creates desktop shortcuts**  
-✅ **Works on Windows and Linux**
+- ✅ On Windows: downloads a prebuilt executable (no Python required)
+- ✅ On Linux: downloads a prebuilt executable when available, or builds locally via PyInstaller
+- ✅ Creates a desktop entry on Linux (menu entry/shortcut)
 
 ### 🐧 **Linux Installation**
 
@@ -99,18 +133,7 @@ open-transcribe
 - ✅ Automatic Python environment setup
 - ✅ Cross-platform audio recording
 
-### 🎯 **Windows Installer** *(Alternative Method)*
-
-1.  **📦 Download the Installer**
-    ```
-    🔗 Download OpenTranscribeSetup.exe from the Windows_installer/ directory
-    ```
-    **[⬇️ Direct Download Link](Windows_installer/OpenTranscribeSetup.exe)**
-
-2.  **▶️ Run & Install**
-    - Double-click `OpenTranscribeSetup.exe`
-    - Follow the simple on-screen setup wizard
-    - Launch Open-Transcribe from your Start Menu or Desktop shortcut
+> Note: The standalone Windows installer has been deprecated. Use the npm installation above for the best experience.
 
 ### 🔑 **Get Your FREE API Key (Required for Both Methods)**
    - Visit [🌟 Google AI Studio](https://aistudio.google.com/apikey)
@@ -118,70 +141,49 @@ open-transcribe
    - Generate your API key
    - Paste it into Open-Transcribe (only once at the first launch)
 
-**🎉 That's it! You're ready to transcribe!**
 
 ---
 
 ## 🛠️ Build from Source
 
-Perfect for developers, contributors, and customization enthusiasts!
+For developers and contributors.
 
 ### 📋 Prerequisites
 
 ```bash
 ✅ Python 3.x
-✅ pip (Python package manager)
-✅ PyInstaller (for executable builds)
-✅ Inno Setup Compiler (for Windows installer)
 ```
+### 🔨 Build executables locally
 
-### 🚀 Quick Start
-
+Linux/macOS:
 ```bash
-# 📁 Clone the repository
-git clone https://github.com/MahmoudUwk/Open-Transcribe.git
-cd Open-Transcribe
-
-# 🌐 Create virtual environment (recommended)
-python -m venv .venv
-.venv\Scripts\activate
-
-# 📦 Install dependencies
-pip install -r requirements.txt
-
-# 🏃‍♂️ Run the application
-python src/main.py
+bash linux/build.sh
+# Result: dist/linux/open-transcribe
+````
+Windows (run on Windows):
+```powershell
+pyinstaller --name open-transcribe --onefile --windowed src/main.py --distpath dist/windows --workpath build --specpath build
+# Result: dist/windows/open-transcribe.exe
 ```
-
-### 🔨 Building Your Own Installer
-
-Want to create a custom build? Here's how:
-
-1. **🎯 Build Executable**
-   ```bash
-   pyinstaller --onefile src/main.py --distpath src/dist --workpath src/build
-   ```
-
-2. **📦 Create Windows Installer**
-   ```bash
-   # Using Inno Setup Compiler
-   "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" src\OpenTranscribeInstaller.iss
-   ```
 
 ---
 
 ## 📁 Project Structure
-
-```
 Open-Transcribe/
-├── 📂 src/
-│   ├── 🐍 main.py                     # Main application
-│   └── 📜 OpenTranscribeInstaller.iss # Installer script
-├── 📂 Windows_installer/
-│   └── 💾 OpenTranscribeSetup.exe     # Ready-to-use installer
-├── 📄 requirements.txt               # Python dependencies
-├── 📋 README.md                      # You are here!
-└── 📜 LICENSE                        # MIT License
+├── bin/
+│   └── open-transcribe.js            # Cross-platform launcher (npm bin)
+├── linux/
+│   ├── build.sh                      # Linux build script (PyInstaller)
+│   └── run_app.sh                    # Dev helper to run from source
+├── scripts/
+│   ├── postinstall.js                # Downloads prebuilts or builds locally
+│   ├── preuninstall.js               # Cleanup on uninstall
+│   └── test-installation.js          # Sanity checks
+├── src/
+│   └── main.py                       # Main application
+├── requirements.txt                  # Python dependencies
+├── README.md                         # You are here!
+└── LICENSE                           # MIT License
 ```
 
 ---

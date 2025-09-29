@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/v1/schema/tauri.schema.json",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:5173",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "Open Transcribe",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "bundle": {
+      "identifier": "com.open-transcribe.app",
+      "targets": [
+        "app",
+        "dmg",
+        "appimage",
+        "deb",
+        "rpm",
+        "msi",
+        "nsis"
+      ]
+    },
+    "updater": {
+      "active": false
+    },
+    "windows": [
+      {
+        "title": "Open Transcribe",
+        "width": 1080,
+        "height": 720,
+        "resizable": true
+      }
+    ]
+  }
+}
