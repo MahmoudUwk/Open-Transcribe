@@ -49,6 +49,13 @@ Static assets are emitted to `src/dist/`. Deploy that folder to any static host 
 - Users must re-enter the key when switching browsers or devices.
 - Consider adding export/import features if you need cross-device sync.
 
+## 🔒 Security Notes
+
+- Open-Transcribe never stores your Gemini key on a server; it lives only in the current browser’s `localStorage`.
+- Only paste a key on trusted machines. Anyone with access to that browser profile (or DevTools) can read or remove the stored key.
+- If you suspect exposure, rotate the key in Google AI Studio and click **Remove** in the Gemini preferences panel to clear the cached value.
+- Browser extensions or untrusted scripts could capture audio or keys; advise users to keep their environment clean.
+
 ## 🧪 Testing & Linting
 
 ```bash
