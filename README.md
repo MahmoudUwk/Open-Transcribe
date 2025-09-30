@@ -43,6 +43,20 @@ Static assets are emitted to `src/dist/`. Deploy that folder to any static host 
 - `netlify init` (done) links to Netlify CI/CD.
 - `netlify deploy --prod --dir=dist` publishes the latest build.
 
+## 🧩 Prompt Presets
+
+Open-Transcribe ships with ready-to-use Gemini prompts defined in `src/src/constants/config.ts`.
+
+- **Transcribe (Autodetect languages)** (`transcribe-autodetect`)
+  - Verbatim transcript with automatic language detection.
+  - Output: single clean paragraph, no speaker labels.
+- **Transcribe and Plan** (`transcribe-plan`)
+  - Produces the full transcription plus a "Plan" section summarizing next actions.
+  - Helpful for meetings or brainstorming sessions.
+- **Instruction Assistant** (`instruction-assistant`)
+  - Follows the spoken request exactly (draft an email, explain a topic, etc.).
+  - Returns a transcription only if the audio explicitly asks for one.
+
 ## 🔐 Storing API Keys
 
 - Each browser profile saves its Gemini key in `localStorage`.
