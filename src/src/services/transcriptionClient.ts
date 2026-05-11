@@ -121,21 +121,19 @@ function extractTextFromResponseSync(response: GenerateContentResponse): string 
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {
-  const arrayBuffer = await blob.arrayBuffer();
-
-  if (typeof Buffer !== "undefined") {
-    return Buffer.from(arrayBuffer).toString("base64");
-  }
-
-  let binary = "";
-  const bytes = new Uint8Array(arrayBuffer);
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode.apply(null, Array.from(chunk));
-  }
-  if (typeof btoa === "function") {
-    return btoa(binary);
-  }
-  throw new Error("Unable to convert audio to base64");
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // result is "data:audio/webm;base64,..."
+      const base64 = result.split(",")[1];
+      if (base64) {
+        resolve(base64);
+      } else {
+        reject(new Error("Failed to extract base64 from audio data"));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }

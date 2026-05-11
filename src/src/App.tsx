@@ -1,3 +1,4 @@
+import Markdown from "markdown-to-jsx";
 import {
   ChangeEvent,
   useCallback,
@@ -47,12 +48,13 @@ export function App({
   const [prefsMessage, setPrefsMessage] = useState<string | null>(null);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
   const [transcriptionStatus, setTranscriptionStatus] = useState<string | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | undefined>();
   const [isEditingApiKey, setIsEditingApiKey] = useState(true);
   const [routerState, setRouterState] = useState<RouterState | null>(null);
   const [usageData, setUsageData] = useState<UsageData>(() => loadUsage());
-  const outputRef = useRef<HTMLTextAreaElement>(null);
+  const outputRef = useRef<HTMLElement>(null);
 
   const usageMap = useMemo(() => getUsageMap(MODEL_POOL, usageData), [usageData]);
 
@@ -323,6 +325,12 @@ export function App({
   const isApiKeyPresent = apiKey.trim().length > 0;
   const showApiKeyForm = !isApiKeyPresent || isEditingApiKey;
 
+  const apiStatusBadge = (
+    <span className={`api-status ${isApiKeyPresent ? "status-ready" : "status-missing"}`}>
+      {isApiKeyPresent ? "API: Configured" : "API: Required"}
+    </span>
+  );
+
   return (
     <div className="page">
       <header className="header">
@@ -351,7 +359,7 @@ export function App({
                 <span className="status-label">{statusText}</span>
               </span>
             </h1>
-            <p>Free browser audio transcription powered by Google Gemini — record, transcribe, and extract action items or execute voice commands.</p>
+            <p>Configure free API → Record → Run → Get Output.</p>
           </div>
         </div>
         <div className="header-meta">
@@ -432,7 +440,7 @@ export function App({
             <div className="controls-row">
               <div className="model-pool" aria-label="Model pool">
                 <span className="model-pool-label">
-                  Models ({Array.from(usageMap.values()).reduce((s, u) => s + u.used, 0)}/{MODEL_POOL.reduce((s, m) => s + m.rpd, 0)} RPD)
+                  Models ({Array.from(usageMap.values()).reduce((s, u) => s + u.used, 0)}/{MODEL_POOL.reduce((s, m) => s + m.rpd, 0)} Free Daily Quota)
                 </span>
                 <div className="model-pool-list">
                   {MODEL_POOL.map((m) => {
@@ -465,6 +473,9 @@ export function App({
                     </option>
                   ))}
                 </select>
+                <p className="prompt-description">
+                  {selectedPrompt.description}
+                </p>
               </div>
             </div>
             <div className="playback" role="region" aria-label="Recording playback">
@@ -539,6 +550,7 @@ export function App({
                     >
                       Get a free Gemini Key
                     </a>
+                    {apiStatusBadge}
                   </div>
                 </>
               ) : (
@@ -565,6 +577,7 @@ export function App({
                   >
                     Get a free Gemini Key
                   </a>
+                  {apiStatusBadge}
                 </div>
               )}
               {recorderError && (
@@ -595,6 +608,14 @@ export function App({
             <div className="transcription-actions">
               <button
                 type="button"
+                onClick={() => setShowRaw(!showRaw)}
+                disabled={transcription.length === 0}
+                className="btn-toggle"
+              >
+                {showRaw ? "Preview" : "Raw"}
+              </button>
+              <button
+                type="button"
                 onClick={handleCopyTranscription}
                 disabled={transcription.length === 0}
               >
@@ -612,13 +633,28 @@ export function App({
             </div>
           </div>
           <div className="transcription-content">
-            <textarea
-              ref={outputRef}
-              aria-label="Transcription output"
-              value={transcription}
-              onChange={(event) => setTranscription(event.target.value)}
-              placeholder="Transcriptions will appear here once processing completes."
-            />
+            {showRaw ? (
+              <textarea
+                ref={outputRef as React.RefObject<HTMLTextAreaElement>}
+                aria-label="Transcription output"
+                value={transcription}
+                onChange={(event) => setTranscription(event.target.value)}
+                placeholder="Transcriptions will appear here once processing completes."
+              />
+            ) : (
+              <div
+                className="markdown-preview"
+                ref={outputRef as React.RefObject<HTMLDivElement>}
+                tabIndex={0}
+                aria-live="polite"
+              >
+                {transcription ? (
+                  <Markdown>{transcription}</Markdown>
+                ) : (
+                  <p className="placeholder-text">Transcriptions will appear here once processing completes.</p>
+                )}
+              </div>
+            )}
             {transcriptionError && (
               <div className="alert error" role="alert">
                 {transcriptionError}

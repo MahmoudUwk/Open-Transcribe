@@ -23,24 +23,24 @@ export const PROMPT_PRESETS: PromptPreset[] = [
     id: "transcribe-autodetect",
     label: "Transcribe (Autodetect languages)",
     description:
-      "Accurate transcription with automatic language detection. Removes filler words, stutters, and false starts while preserving the speaker's exact meaning.",
+      "Polished transcription with auto-language detection. Removes stutters and filler while preserving exact meaning.",
     prompt:
-      "You are an expert transcription engine. Transcribe the supplied audio accurately, detecting the language automatically. Remove filler words (um, uh, like, you know), stutters, repeated phrases, false starts, and verbal hiccups — but do NOT alter the speaker's meaning or add any words they did not intend. Output the result as a single clean paragraph without speaker labels.",
+      "You are an expert transcription engine. Transcribe the supplied audio accurately, detecting the language automatically. Remove filler words (um, uh, like, you know), stutters, repeated phrases, false starts, and verbal hiccups — but do NOT alter the speaker's meaning or add any words they did not intend. Output the result in Markdown format. Use a single clean paragraph or appropriate structure based on the content.",
   },
   {
     id: "transcribe-plan",
     label: "Transcribe and Plan (Action items from audio)",
     description:
-      "Transcribe the recording, then extract a structured action plan with only what was said — no added suggestions or assumptions.",
+      "Full transcript with a structured action plan. Captures tasks, decisions, and deadlines exactly as spoken.",
     prompt:
-      "You are an expert transcription and planning assistant. First, transcribe the supplied audio accurately, removing filler words, stutters, and false starts. Then add a section titled 'Plan'. The plan must: (1) extract only concrete tasks, decisions, or steps the speaker actually mentioned — do NOT invent, suggest, or assume anything the speaker did not say, (2) be formatted as bullet points, (3) preserve any priorities, deadlines, or assignments the speaker specified. If the speaker did not mention any actionable items, write 'No action items found' under the Plan heading instead of making them up.",
+      "You are an expert transcription and planning assistant. First, transcribe the supplied audio accurately, removing filler words, stutters, and false starts. Then add a section titled 'Plan'. Format the entire response in Markdown. The 'Plan' section must: (1) use a ## Plan heading, (2) extract only concrete tasks, decisions, or steps mentioned — do NOT invent anything, (3) use bullet points, (4) preserve any mentioned priorities. If no action items exist, write '*No action items found*' under the Plan heading.",
   },
   {
     id: "instruction-assistant",
     label: "Instruction Assistant (Do what you hear)",
     description:
-      "Execute whatever the speaker asks — write code, draft text, explain concepts, plan projects. The audio is a voice command, not a thing to transcribe.",
+      "Direct execution of spoken commands. Write code, draft emails, or get answers without needing a transcript.",
     prompt:
-      "The supplied audio contains a spoken instruction or request from the user. Execute it precisely. Common examples: write or debug code, draft an email or message, explain a concept, create a plan or outline, answer a question. Treat the audio as a voice command directed at you — respond with the requested output directly. Do NOT transcribe the audio unless the speaker explicitly asks for a transcription.",
+      "The supplied audio contains a spoken instruction or request from the user. Execute it precisely. Format your entire response in rich Markdown (using headings, bold text, code blocks, or lists where appropriate). Treat the audio as a voice command directed at you — respond with the requested output directly. Do NOT transcribe the audio unless the speaker explicitly asks for a transcription.",
   },
 ];
