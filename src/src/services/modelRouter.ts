@@ -27,14 +27,17 @@ export function createRouter(models: ModelInfo[]): {
   let attempts = 0;
 
   function getState(): RouterState {
+    const allFailed = entries.every((e) => e.status === "failed");
     return {
       entries: entries.map((e, i) => ({
         ...e,
-        status: i === currentIndex
-          ? "active"
-          : e.status === "failed"
-            ? "failed"
-            : "available",
+        status: allFailed
+          ? "failed"
+          : i === currentIndex
+            ? "active"
+            : e.status === "failed"
+              ? "failed"
+              : "available",
       })),
       currentIndex,
       lastError,
@@ -56,10 +59,7 @@ export function createRouter(models: ModelInfo[]): {
 
     const allFailed = entries.every((e) => e.status === "failed");
     if (allFailed) {
-      entries = entries.map((e) => ({ ...e, status: "available" as RouterStatus }));
-      currentIndex = 0;
-      entries[currentIndex].status = "active";
-      return entries[currentIndex];
+      return null;
     }
 
     for (let i = 1; i <= entries.length; i++) {

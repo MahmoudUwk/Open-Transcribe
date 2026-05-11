@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioRecorder,
-  AudioRecorderError,
   AudioRecorderSnapshot,
   RecorderAdapter,
   RecordingResult,
@@ -71,10 +70,4 @@ export function useAudioRecorder(
     reset: actions.reset,
     error: snapshot.error,
   };
-}
-
-export class BrowserRecordingUnsupportedError extends AudioRecorderError {
-  constructor() {
-    super("Media recording is not supported in this environment");
-  }
 }

@@ -31,29 +31,17 @@ function mp3ToBase64(filePath: string): string {
   return buffer.toString("base64");
 }
 
-describe("Bible integration test", () => {
-  let apiKey: string | undefined;
+const env = loadEnv();
+const apiKey = env["Gemini_APY_Key"] || process.env.GEMINI_API_KEY;
+
+describe.skipIf(!apiKey)("Bible integration test", () => {
   let audioBase64: string;
 
   beforeAll(() => {
-    const env = loadEnv();
-    apiKey = env["Gemini_APY_Key"] || process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      console.warn(
-        "[bible_test] No Gemini API key found. Set Gemini_APY_Key in .env or GEMINI_API_KEY in environment."
-      );
-    }
-
     audioBase64 = mp3ToBase64(MP3_PATH);
   });
 
   it("transcribes bible_test.mp3 using the Gemini API", { timeout: 30_000 }, async () => {
-    if (!apiKey) {
-      console.warn("[bible_test] Skipping — no API key.");
-      return;
-    }
-
     const client = new GoogleGenAI({ apiKey });
 
     const response = await client.models.generateContent({

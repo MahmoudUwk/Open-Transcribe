@@ -1,7 +1,9 @@
 import {
+  ChangeEvent,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { MODEL_POOL, PROMPT_PRESETS } from "./constants/config";
@@ -42,6 +44,7 @@ export function App({
   const [transcriptionError, setTranscriptionError] = useState<string | undefined>();
   const [isEditingApiKey, setIsEditingApiKey] = useState(true);
   const [routerState, setRouterState] = useState<RouterState | null>(null);
+  const outputRef = useRef<HTMLTextAreaElement>(null);
 
   const { snapshot, start, stop, reset, error: hookError } = useAudioRecorder({
     adapter: recorderAdapter,
@@ -67,8 +70,6 @@ export function App({
       PROMPT_PRESETS.find((preset) => preset.id === prompt) ?? PROMPT_PRESETS[0]
     );
   }, [prompt]);
-
-  const selectedPromptDescription = selectedPrompt?.description ?? "";
 
   useEffect(() => {
     if (!lastRecording) {
@@ -209,7 +210,7 @@ export function App({
     ? "Retry Recording"
     : "Start Recording";
 
-  const handlePromptChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handlePromptChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setPrompt(value);
     setPrefsMessage(null);
@@ -263,6 +264,7 @@ export function App({
       });
       setTranscription(result.text);
       setTranscriptionStatus(`Done via ${MODEL_POOL.find(m => m.id === result.modelUsed)?.label ?? result.modelUsed}${result.attempts > 1 ? ` (attempt ${result.attempts})` : ""}.`);
+      outputRef.current?.focus();
     } catch (error) {
       setTranscriptionError(toErrorMessage(error));
       setTranscriptionStatus(null);
@@ -411,8 +413,9 @@ export function App({
                   {MODEL_POOL.map((m) => {
                     const entry = routerState?.entries.find((e) => e.id === m.id);
                     const status = entry?.status ?? "available";
+                    const statusLabel = status === "active" ? "active" : status === "failed" ? "failed" : "available";
                     return (
-                      <span key={m.id} className={`model-badge model-${status}`}>
+                      <span key={m.id} className={`model-badge model-${status}`} aria-label={`${m.label} — ${statusLabel}`}>
                         {status === "active" ? "\u25CF" : status === "failed" ? "\u2717" : "\u25CB"}
                         {" "}{m.label} <small>({m.rpd})</small>
                       </span>
@@ -584,6 +587,7 @@ export function App({
           </div>
           <div className="transcription-content">
             <textarea
+              ref={outputRef}
               aria-label="Transcription output"
               value={transcription}
               onChange={(event) => setTranscription(event.target.value)}

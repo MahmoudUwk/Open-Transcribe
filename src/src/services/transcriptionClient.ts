@@ -97,7 +97,12 @@ export async function transcribeRecording(
   );
 }
 
-function extractTextFromResponseSync(response: any): string | undefined {
+type GenerateContentResponse = {
+  text?: string;
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+};
+
+function extractTextFromResponseSync(response: GenerateContentResponse): string | undefined {
   if (!response) return undefined;
 
   if (typeof response.text === "string" && response.text.trim()) {
@@ -127,7 +132,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
   const chunkSize = 0x8000;
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
   }
   if (typeof btoa === "function") {
     return btoa(binary);

@@ -14,7 +14,7 @@ body {
   margin: 0;
   background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 * {
@@ -24,8 +24,7 @@ body {
 .page {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  min-height: 0;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   margin: 0;
   padding: clamp(8px, 2vh, 16px);
@@ -173,7 +172,6 @@ body {
   width: 100%;
   grid-auto-rows: 1fr;
   min-height: 0;
-  overflow: hidden;
 }
 
 .main > * {
@@ -192,7 +190,6 @@ body {
   flex-direction: column;
   gap: 12px;
   height: 100%;
-  overflow: hidden;
 }
 
 .controls-content,
@@ -237,24 +234,13 @@ body {
 }
 
 .preferences-panel {
-  margin-top: 0;
-  padding: clamp(6px, 1vh, 10px);
-  border-radius: 16px;
-  border: 1px solid rgba(96, 165, 250, 0.35);
-  background: rgba(37, 99, 235, 0.1);
-  display: grid;
-  gap: 6px;
-  align-content: start;
-}
-
-.preferences-panel {
   margin-top: 8px;
-  padding: clamp(6px, 1vh, 10px);
+  padding: clamp(8px, 1.2vh, 12px);
   border-radius: 16px;
   border: 1px solid rgba(96, 165, 250, 0.35);
   background: rgba(37, 99, 235, 0.1);
   display: grid;
-  gap: 6px;
+  gap: 8px;
   align-content: start;
 }
 
@@ -359,16 +345,6 @@ textarea {
 .prompt-description {
   margin-top: 6px;
   color: #94a3b8;
-}
-
-.preferences-panel {
-  margin-top: 20px;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(96, 165, 250, 0.35);
-  background: rgba(37, 99, 235, 0.1);
-  display: grid;
-  gap: 16px;
 }
 
 .preferences-header {
@@ -499,6 +475,22 @@ textarea {
 .error-boundary p {
   color: #cbd5f5;
   max-width: 480px;
+}
+
+@media (max-width: 680px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-meta {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 1280px) {
