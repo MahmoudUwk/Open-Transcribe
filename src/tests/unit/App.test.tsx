@@ -117,7 +117,7 @@ describe("App layout", () => {
   it("renders header branding and subtitle", async () => {
     await renderApp();
     expect(await screen.findByRole("heading", { name: /open-transcribe/i })).toBeInTheDocument();
-    expect(screen.getByText(/ai-powered audio transcription/i)).toBeInTheDocument();
+    expect(screen.getByText(/free browser audio transcription/i)).toBeInTheDocument();
   });
 
   it("provides recording controls and status", async () => {

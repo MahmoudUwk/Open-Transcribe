@@ -351,18 +351,10 @@ export function App({
                 <span className="status-label">{statusText}</span>
               </span>
             </h1>
-            <p>AI-Powered Audio Transcription</p>
+            <p>Free browser audio transcription powered by Google Gemini — record, transcribe, and extract action items or execute voice commands.</p>
           </div>
         </div>
         <div className="header-meta">
-          <a
-            className="header-link"
-            href="https://github.com/MahmoudUwk/Open-Transcribe.git"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            GitHub
-          </a>
           <span className="author-credit">
             Made by
             <a
@@ -374,30 +366,41 @@ export function App({
               Mahmoud Sallam
             </a>
           </span>
-          <a
-            className="header-link linkedin"
-            href="https://www.linkedin.com/in/mahmoudsallam7/"
-            target="_blank"
-            rel="noreferrer noopener"
-            aria-label="Mahmoud Sallam on LinkedIn"
-          >
-            <svg className="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.329-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.937v5.669H9.352V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.604 0 4.268 2.372 4.268 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.121 20.452H3.553V9h3.568v11.452z"></path>
-            </svg>
-            <span className="sr-only">LinkedIn</span>
-          </a>
-          <a
-            className="header-link resume-link"
-            href="https://mahmoudresume.netlify.app/"
-            target="_blank"
-            rel="noreferrer noopener"
-            aria-label="Mahmoud Sallam Resume"
-          >
-            <svg className="resume-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-6h8v1.5H8V14zm0 3h8v1.5H8V17zm0-6h3v1.5H8V11zm4-7l4 4h-4V4z"/>
-            </svg>
-            <span className="sr-only">Resume</span>
-          </a>
+          <div className="header-icons">
+            <a
+              className="header-link icon-link"
+              href="https://github.com/MahmoudUwk/Open-Transcribe.git"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="Open-Transcribe on GitHub"
+            >
+              <svg className="meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 0C5.37 0 0 5.37 0 12a12 12 0 0 0 8.21 11.44c.6.11.82-.26.82-.58 0-.29-.01-1.06-.02-2.07-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.35-1.76-1.35-1.76-1.1-.75.08-.74.08-.74 1.22.09 1.86 1.26 1.86 1.26 1.08 1.85 2.83 1.32 3.52 1 .11-.78.42-1.32.76-1.62-2.67-.3-5.48-1.33-5.48-5.91 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.05.14 3 .4 2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.59-2.81 5.61-5.49 5.91.43.37.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58A12 12 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
+              </svg>
+            </a>
+            <a
+              className="header-link icon-link"
+              href="https://www.linkedin.com/in/mahmoudsallam7/"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="Mahmoud Sallam on LinkedIn"
+            >
+              <svg className="meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.329-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.937v5.669H9.352V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.604 0 4.268 2.372 4.268 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.121 20.452H3.553V9h3.568v11.452z" />
+              </svg>
+            </a>
+            <a
+              className="header-link icon-link"
+              href="https://mahmoudresume.netlify.app/"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="Mahmoud Sallam Resume"
+            >
+              <svg className="meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-6h8v1.5H8V14zm0 3h8v1.5H8V17zm0-6h3v1.5H8V11zm4-7l4 4h-4V4z" />
+              </svg>
+            </a>
+          </div>
         </div>
       </header>
 
@@ -624,11 +627,6 @@ export function App({
           </div>
         </section>
       </main>
-
-      <footer className="footer">
-        <span>Powered by Google Gemini AI</span>
-        <span>© {new Date().getFullYear()} Open-Transcribe</span>
-      </footer>
     </div>
   );
 }

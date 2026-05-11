@@ -23,7 +23,7 @@ body {
 
 .page {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   min-height: 100vh;
   width: 100%;
   margin: 0;
@@ -127,17 +127,39 @@ body {
   align-items: center;
   gap: 14px;
   flex-wrap: nowrap;
-  color: #d4b896;
   white-space: nowrap;
-  font-size: 200%;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meta-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  transition: transform 0.15s ease, fill 0.15s ease;
+}
+
+.icon-link:hover .meta-icon {
+  transform: scale(1.15);
 }
 
 .author-credit {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #d4b896;
+  gap: 8px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #f5e6c8;
 }
 
 .header-link {
@@ -153,23 +175,13 @@ body {
 
 .header .header-link {
   color: #d4a853;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .header .header-link:hover {
-  color: #e8c170;
-}
-
-.linkedin-icon,
-.resume-icon {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-.linkedin {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  color: #f0ca6e;
 }
 
 .sr-only {
@@ -467,11 +479,6 @@ textarea {
 .transcription textarea {
   flex: 1;
   min-height: 200px;
-}
-
-.footer span {
-  color: #94a3b8;
-  font-size: 14px;
 }
 
 .error-boundary {
