@@ -7,6 +7,7 @@
     "dev": "cd src && npm run dev",
     "build": "cd src && npm run build",
     "test": "cd src && npm run test",
+    "test:bible": "cd src && npm run test:bible",
     "lint": "cd src && npm run lint",
     "check": "cd src && npm run check"
   }

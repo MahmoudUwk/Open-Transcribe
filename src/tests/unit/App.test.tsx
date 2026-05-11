@@ -57,13 +57,10 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { App, type AppProps } from "../../src/App";
 import { DEFAULT_MODEL } from "../../src/constants/config";
-import type {
-  RecorderAdapter,
-  RecordingResult,
-} from "../../src/services/audioRecorder";
+import type { RecorderAdapter } from "../../src/services/audioRecorder";
 import type { Preferences, PreferencesManager } from "../../src/services/preferences";
 
-const noopTranscribe = vi.fn(async () => ({ text: "" }));
+const noopTranscribe = vi.fn(async () => ({ text: "", modelUsed: DEFAULT_MODEL, attempts: 1 }));
 
 const createObjectURLMock = vi.fn<(blob: Blob) => string>(() => "blob:mock-url");
 const revokeObjectURLMock = vi.fn<(url: string) => void>(() => {});
@@ -129,17 +126,17 @@ describe("App layout", () => {
     expect(screen.getByRole("status", { name: /recording status/i })).toHaveTextContent(/ready/i);
   });
 
-  it("allows selecting model and prompt presets", async () => {
+  it("shows model pool and prompt preset selector", async () => {
     await renderApp();
-    await screen.findByLabelText(/model/i);
-    expect(screen.getByLabelText(/model/i)).toHaveValue(DEFAULT_MODEL);
+    expect(screen.getByLabelText(/model pool/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\.1 flash-lite/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 flash preview/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/prompt preset/i)).toBeInTheDocument();
-    expect(screen.getByText(/produce a verbatim transcription/i)).toBeInTheDocument();
   });
 
   it("exposes transcription output area", async () => {
     await renderApp();
-    await screen.findByRole("heading", { name: /transcription/i });
+    await screen.findByRole("heading", { name: /output/i });
     expect(screen.getByRole("textbox", { name: /transcription output/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy/i })).toBeDisabled();
   });
@@ -148,11 +145,13 @@ describe("App layout", () => {
     const user = userEvent.setup();
     const deps = createAppDeps();
     const mock = createMockAdapter();
+    let container: HTMLElement;
     await act(async () => {
-      render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+      const result = render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+      container = result.container;
     });
 
-    const playback = screen.getByLabelText(/recording playback/i) as HTMLAudioElement;
+    const playback = container!.querySelector("audio.recording-preview") as HTMLAudioElement;
     expect(playback).toHaveAttribute("aria-disabled", "true");
     expect(playback).not.toHaveAttribute("src");
 
@@ -188,27 +187,33 @@ describe("App layout", () => {
     const user = userEvent.setup();
     const mock = createMockAdapter();
     const deps = createAppDeps();
+    let container: HTMLElement;
     await act(async () => {
-      render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+      const result = render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+      container = result.container;
     });
 
     await user.click(screen.getByRole("button", { name: /start recording/i }));
     await user.click(screen.getByRole("button", { name: /stop recording/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/recording playback/i)).toBeInTheDocument();
+      expect(container!.querySelector("audio.recording-preview")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /clear/i }));
+    await user.click(screen.getByRole("button", { name: /^clear$/i }));
 
-    const playback = screen.getByLabelText(/recording playback/i) as HTMLAudioElement;
+    const playback = container!.querySelector("audio.recording-preview") as HTMLAudioElement;
     expect(playback).toHaveAttribute("aria-disabled", "true");
     expect(playback).not.toHaveAttribute("src");
   });
 
   it("saves API key through preferences manager", async () => {
     const user = userEvent.setup();
-    const prefs = createMockPreferencesManager();
+    const prefs = createMockPreferencesManager({
+      model: DEFAULT_MODEL,
+      prompt: "transcribe-autodetect",
+      apiKey: "existing-key",
+    });
     const deps = createAppDeps({ preferences: prefs });
     await act(async () => {
       render(<App {...deps.props} />);
@@ -232,7 +237,7 @@ describe("App layout", () => {
   it("invokes transcription when requested", async () => {
     const user = userEvent.setup();
     const mock = createMockAdapter();
-    const transcribe = vi.fn(async () => ({ text: "Hello world" }));
+    const transcribe = vi.fn(async () => ({ text: "Hello world", modelUsed: DEFAULT_MODEL, attempts: 1 }));
     const prefs = createMockPreferencesManager({
       model: DEFAULT_MODEL,
       prompt: "transcribe-autodetect",
@@ -247,7 +252,7 @@ describe("App layout", () => {
     await user.click(screen.getByRole("button", { name: /start recording/i }));
     await user.click(screen.getByRole("button", { name: /stop recording/i }));
 
-    await user.click(screen.getByRole("button", { name: /transcribe recording/i }));
+    await user.click(screen.getByRole("button", { name: /run/i }));
 
     await waitFor(() => {
       expect(transcribe).toHaveBeenCalledTimes(1);

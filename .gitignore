@@ -1,11 +1,19 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
 .venv/
+.netlify/
+.vite/
+.windsurf/
+CLAUDE.md
 __pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
 recorded_audio.wav
 main.spec
-build/
-dist/
-.env 
-.windsurf
-CLAUDE.md
-# Local Netlify folder
-.netlify

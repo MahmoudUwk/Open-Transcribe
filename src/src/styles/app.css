@@ -401,6 +401,59 @@ textarea {
   margin-top: 8px;
 }
 
+.model-pool {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.model-pool-label {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.model-pool-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.model-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.model-badge small {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.model-badge.model-active {
+  border-color: rgba(110, 231, 183, 0.5);
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+.model-badge.model-failed {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(127, 29, 29, 0.2);
+  color: #f87171;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
 .alert.success {
   border-color: rgba(110, 231, 183, 0.6);
   background: rgba(16, 185, 129, 0.3);

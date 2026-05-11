@@ -5,7 +5,18 @@ export type PromptPreset = {
   prompt: string;
 };
 
-export const DEFAULT_MODEL = "gemini-2.5-flash-preview-09-2025";
+export type ModelInfo = {
+  id: string;
+  label: string;
+  rpd: number;
+};
+
+export const MODEL_POOL: ModelInfo[] = [
+  { id: "gemini-3.1-flash-lite", label: "3.1 Flash-Lite", rpd: 500 },
+  { id: "gemini-3-flash-preview", label: "3 Flash Preview", rpd: 20 },
+];
+
+export const DEFAULT_MODEL = MODEL_POOL[0].id;
 
 export const PROMPT_PRESETS: PromptPreset[] = [
   {

@@ -1,13 +1,18 @@
 import type { RecordingResult } from "./audioRecorder";
+import type { ModelInfo } from "../constants/config";
+import { createRouter, isRetryableError, type RouterState } from "./modelRouter";
 
 export type TranscriptionOptions = {
   apiKey: string;
-  model: string;
   prompt: string;
+  modelPool: ModelInfo[];
+  onRouterChange?: (state: RouterState) => void;
 };
 
 export type TranscriptionResult = {
   text: string;
+  modelUsed: string;
+  attempts: number;
 };
 
 export class TranscriptionError extends Error {
@@ -21,14 +26,14 @@ export async function transcribeRecording(
   recording: RecordingResult,
   options: TranscriptionOptions
 ): Promise<TranscriptionResult> {
-  const { apiKey, model, prompt } = options;
+  const { apiKey, prompt, modelPool, onRouterChange } = options;
 
   if (!apiKey) {
     throw new TranscriptionError("A Gemini API key is required");
   }
 
-  const { GoogleGenAI } = await import("@google/genai");
-  const client = new GoogleGenAI({ apiKey });
+  const router = createRouter(modelPool);
+  const notify = () => onRouterChange?.(router.getState());
 
   let audioBase64: string;
   try {
@@ -40,164 +45,74 @@ export async function transcribeRecording(
   }
 
   const mimeType = recording.format || recording.blob.type || "audio/webm";
-
-  const promptText = prompt?.trim() ?? "";
+  const promptText = prompt?.trim() || "Provide a transcript of this audio clip.";
   const contents = [
-    {
-      role: "user",
-      parts: [
-        {
-          text: promptText.length > 0 ? promptText : "Provide a transcript of this audio clip.",
-        },
-        {
-          inlineData: {
-            mimeType,
-            data: audioBase64,
-          },
-        },
-      ],
-    },
+    { text: promptText },
+    { inlineData: { mimeType, data: audioBase64 } },
   ];
 
-  let response: any;
-  try {
-    response = await client.models.generateContent({
-      model,
-      contents,
-    });
-  } catch (error) {
-    throw new TranscriptionError(
-      error instanceof Error ? error.message : "Gemini request failed"
-    );
-  }
+  notify();
 
-  const text = await extractTextFromResponse(response);
+  const { GoogleGenAI } = await import("@google/genai");
+  const client = new GoogleGenAI({ apiKey });
 
-  if (!text) {
-    const debugMessage = summarizeResponseForDebug(response);
-    if (typeof console !== "undefined") {
-      console.warn("[transcription] Gemini returned no transcript", {
-        response: safeDebugObject(response),
-        summary: debugMessage,
-      });
-    }
-    throw new TranscriptionError(
-      `Gemini returned no transcript. ${debugMessage}`.trim()
-    );
-  }
+  const errors: string[] = [];
+  let triedAll = false;
 
-  return { text };
-}
+  while (!triedAll) {
+    const model = router.current();
+    const state = router.getState();
 
-async function extractTextFromResponse(response: any): Promise<string | undefined> {
-  const resolveMaybeString = async (value: unknown): Promise<string | undefined> => {
-    if (!value) {
-      return undefined;
-    }
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      return trimmed.length > 0 ? trimmed : undefined;
-    }
-    if (typeof (value as Promise<unknown>)?.then === "function") {
-      try {
-        const resolved = await (value as Promise<unknown>);
-        if (typeof resolved === "string") {
-          const trimmed = resolved.trim();
-          return trimmed.length > 0 ? trimmed : undefined;
+    try {
+      const response = await client.models.generateContent({ model: model.id, contents });
+      const text = response.text ?? extractTextFromResponseSync(response);
+
+      if (!text) {
+        throw new TranscriptionError(`No transcript returned from ${model.label}`);
+      }
+
+      return {
+        text,
+        modelUsed: model.id,
+        attempts: state.attempts + 1,
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Unknown error";
+      errors.push(`${model.label}: ${msg}`);
+
+      if (isRetryableError(error)) {
+        const next = router.advance(msg);
+        notify();
+        if (!next) {
+          triedAll = true;
         }
-      } catch {
-        return undefined;
+      } else {
+        throw new TranscriptionError(msg);
       }
     }
-    return undefined;
-  };
-
-  if (!response) {
-    return undefined;
   }
 
-  if (typeof response.text === "function") {
-    const maybe = await resolveMaybeString(response.text());
-    if (maybe) {
-      return maybe;
-    }
+  throw new TranscriptionError(
+    `All models exhausted.\n${errors.join("\n")}`
+  );
+}
+
+function extractTextFromResponseSync(response: any): string | undefined {
+  if (!response) return undefined;
+
+  if (typeof response.text === "string" && response.text.trim()) {
+    return response.text.trim();
   }
 
-  if (typeof response.response?.text === "function") {
-    const maybe = await resolveMaybeString(response.response.text());
-    if (maybe) {
-      return maybe;
-    }
-  }
-
-  const candidates =
-    response.response?.candidates
-      ?? response.candidates
-      ?? [];
-
-  for (const candidate of candidates) {
-    const parts = candidate?.content?.parts ?? candidate?.parts ?? [];
-    for (const part of parts) {
-      if (typeof part?.text === "string") {
-        const trimmed = part.text.trim();
-        if (trimmed.length > 0) {
-          return trimmed;
-        }
+  for (const candidate of response.candidates ?? []) {
+    for (const part of candidate?.content?.parts ?? []) {
+      if (typeof part?.text === "string" && part.text.trim()) {
+        return part.text.trim();
       }
     }
   }
 
   return undefined;
-}
-
-function summarizeResponseForDebug(response: any): string {
-  try {
-    const candidates =
-      response?.response?.candidates
-        ?? response?.candidates
-        ?? [];
-    const candidateCount = Array.isArray(candidates) ? candidates.length : 0;
-    const topParts = Array.isArray(candidates) && candidates.length > 0
-      ? (candidates[0]?.content?.parts ?? candidates[0]?.parts ?? [])
-          .map((part: any) => {
-            if (typeof part?.text === "string") {
-              return part.text.slice(0, 120);
-            }
-            if (part?.fileData) {
-              return `[fileData:${part.fileData.mimeType ?? "unknown"}]`;
-            }
-            return `[part:${typeof part}]`;
-          })
-          .filter(Boolean)
-          .slice(0, 3)
-      : [];
-
-    const snippet = topParts.length > 0 ? topParts.join(" | ") : "";
-    return `Debug: candidates=${candidateCount}${snippet ? `, topParts=${snippet}` : ""}`;
-  } catch (error) {
-    return `Debug: unable to summarize response (${error instanceof Error ? error.message : "unknown error"})`;
-  }
-}
-
-function safeDebugObject(value: unknown): unknown {
-  try {
-    return JSON.parse(
-      JSON.stringify(value, (_key, val) => {
-        if (val instanceof Blob) {
-          return { __type: "Blob", size: val.size, type: val.type };
-        }
-        if (val instanceof File) {
-          return { __type: "File", name: val.name, size: val.size, type: val.type };
-        }
-        if (val instanceof ArrayBuffer) {
-          return { __type: "ArrayBuffer", byteLength: val.byteLength };
-        }
-        return val;
-      })
-    );
-  } catch {
-    return "[unserialisable]";
-  }
 }
 
 async function blobToBase64(blob: Blob): Promise<string> {

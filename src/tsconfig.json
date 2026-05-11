@@ -13,8 +13,7 @@
     "types": [
       "node",
       "vite/client",
-      "vitest/globals",
-      "./src/types/google-genai"
+      "vitest/globals"
     ],
     "baseUrl": "./"
   },

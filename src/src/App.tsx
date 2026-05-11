@@ -3,9 +3,8 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ChangeEvent,
 } from "react";
-import { PROMPT_PRESETS, DEFAULT_MODEL } from "./constants/config";
+import { MODEL_POOL, PROMPT_PRESETS } from "./constants/config";
 import { useAudioRecorder } from "./hooks/useAudioRecorder";
 import {
   createPreferencesManager,
@@ -13,6 +12,7 @@ import {
   type PreferencesManager,
 } from "./services/preferences";
 import { transcribeRecording as defaultTranscribeRecording } from "./services/transcriptionClient";
+import type { RouterState } from "./services/modelRouter";
 import type { RecorderAdapter, RecordingResult, AudioRecorderState } from "./services/audioRecorder";
 
 export type AppProps = {
@@ -26,7 +26,6 @@ export function App({
   preferencesManager: preferencesManagerProp,
   transcribe: transcribeProp,
 }: AppProps = {}) {
-  const [model, setModel] = useState(DEFAULT_MODEL);
   const [prompt, setPrompt] = useState(PROMPT_PRESETS[0]?.id ?? "");
   const [transcription, setTranscription] = useState("");
   const [lastRecording, setLastRecording] = useState<RecordingResult | null>(null);
@@ -42,6 +41,7 @@ export function App({
   const [transcriptionStatus, setTranscriptionStatus] = useState<string | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | undefined>();
   const [isEditingApiKey, setIsEditingApiKey] = useState(true);
+  const [routerState, setRouterState] = useState<RouterState | null>(null);
 
   const { snapshot, start, stop, reset, error: hookError } = useAudioRecorder({
     adapter: recorderAdapter,
@@ -104,9 +104,6 @@ export function App({
           return;
         }
         if (prefs) {
-          if (prefs.model) {
-            setModel(prefs.model);
-          }
           if (prefs.prompt) {
             setPrompt(prefs.prompt);
           }
@@ -141,7 +138,7 @@ export function App({
 
       setIsSavingPrefs(true);
       const payload: Preferences = {
-        model: partial.model ?? model,
+        model: MODEL_POOL[0].id,
         prompt: partial.prompt ?? prompt,
         apiKey: partial.apiKey ?? apiKey,
       };
@@ -160,7 +157,7 @@ export function App({
         setIsSavingPrefs(false);
       }
     },
-    [apiKey, model, preferencesManagerInstance, preferencesLoaded, prompt]
+    [apiKey, preferencesManagerInstance, preferencesLoaded, prompt]
   );
 
   const handleResetRecorder = (options?: { keepTranscription?: boolean }) => {
@@ -212,14 +209,7 @@ export function App({
     ? "Retry Recording"
     : "Start Recording";
 
-  const handleModelChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setModel(value);
-    setPrefsMessage(null);
-    void persistPreferences({ model: value });
-  };
-
-  const handlePromptChange = (event: ChangeEvent<HTMLSelectElement>) => {
+  const handlePromptChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setPrompt(value);
     setPrefsMessage(null);
@@ -253,16 +243,26 @@ export function App({
 
     setTranscriptionError(undefined);
     setTranscriptionStatus("Sending audio to Gemini...");
+    setRouterState(null);
     setIsTranscribing(true);
 
     try {
       const result = await transcribeFn(lastRecording, {
         apiKey,
-        model,
         prompt: selectedPrompt?.prompt ?? "",
+        modelPool: MODEL_POOL,
+        onRouterChange: (state) => {
+          setRouterState(state);
+          const current = state.entries[state.currentIndex];
+          if (state.attempts > 0) {
+            setTranscriptionStatus(`Rate limited. Trying ${current.label}...`);
+          } else {
+            setTranscriptionStatus(`Trying ${current.label}...`);
+          }
+        },
       });
       setTranscription(result.text);
-      setTranscriptionStatus("Transcription complete.");
+      setTranscriptionStatus(`Done via ${MODEL_POOL.find(m => m.id === result.modelUsed)?.label ?? result.modelUsed}${result.attempts > 1 ? ` (attempt ${result.attempts})` : ""}.`);
     } catch (error) {
       setTranscriptionError(toErrorMessage(error));
       setTranscriptionStatus(null);
@@ -403,16 +403,22 @@ export function App({
             </div>
 
             <div className="controls-row">
-              <div className="control-field">
-                <label htmlFor="model-input">Model</label>
-                <input
-                  id="model-input"
-                  name="model"
-                  aria-label="Model"
-                  value={model}
-                  onChange={handleModelChange}
-                  placeholder="gemini-2.5-flash"
-                />
+              <div className="model-pool" aria-label="Model pool">
+                <span className="model-pool-label">
+                  Models ({MODEL_POOL.reduce((s, m) => s + m.rpd, 0)} RPD)
+                </span>
+                <div className="model-pool-list">
+                  {MODEL_POOL.map((m) => {
+                    const entry = routerState?.entries.find((e) => e.id === m.id);
+                    const status = entry?.status ?? "available";
+                    return (
+                      <span key={m.id} className={`model-badge model-${status}`}>
+                        {status === "active" ? "\u25CF" : status === "failed" ? "\u2717" : "\u25CB"}
+                        {" "}{m.label} <small>({m.rpd})</small>
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="control-field">
