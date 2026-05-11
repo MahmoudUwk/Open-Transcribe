@@ -16,6 +16,13 @@ import {
 import { transcribeRecording as defaultTranscribeRecording } from "./services/transcriptionClient";
 import type { RouterState } from "./services/modelRouter";
 import type { RecorderAdapter, RecordingResult, AudioRecorderState } from "./services/audioRecorder";
+import {
+  loadUsage,
+  incrementUsage,
+  getUsageMap,
+  type UsageData,
+  type UsageEntry,
+} from "./services/usageCounter";
 
 export type AppProps = {
   recorderAdapter?: RecorderAdapter;
@@ -44,7 +51,10 @@ export function App({
   const [transcriptionError, setTranscriptionError] = useState<string | undefined>();
   const [isEditingApiKey, setIsEditingApiKey] = useState(true);
   const [routerState, setRouterState] = useState<RouterState | null>(null);
+  const [usageData, setUsageData] = useState<UsageData>(() => loadUsage());
   const outputRef = useRef<HTMLTextAreaElement>(null);
+
+  const usageMap = useMemo(() => getUsageMap(MODEL_POOL, usageData), [usageData]);
 
   const { snapshot, start, stop, reset, error: hookError } = useAudioRecorder({
     adapter: recorderAdapter,
@@ -264,6 +274,7 @@ export function App({
       });
       setTranscription(result.text);
       setTranscriptionStatus(`Done via ${MODEL_POOL.find(m => m.id === result.modelUsed)?.label ?? result.modelUsed}${result.attempts > 1 ? ` (attempt ${result.attempts})` : ""}.`);
+      setUsageData(incrementUsage(result.modelUsed));
       outputRef.current?.focus();
     } catch (error) {
       setTranscriptionError(toErrorMessage(error));
@@ -407,17 +418,18 @@ export function App({
             <div className="controls-row">
               <div className="model-pool" aria-label="Model pool">
                 <span className="model-pool-label">
-                  Models ({MODEL_POOL.reduce((s, m) => s + m.rpd, 0)} RPD)
+                  Models ({Array.from(usageMap.values()).reduce((s, u) => s + u.used, 0)}/{MODEL_POOL.reduce((s, m) => s + m.rpd, 0)} RPD)
                 </span>
                 <div className="model-pool-list">
                   {MODEL_POOL.map((m) => {
                     const entry = routerState?.entries.find((e) => e.id === m.id);
                     const status = entry?.status ?? "available";
                     const statusLabel = status === "active" ? "active" : status === "failed" ? "failed" : "available";
+                    const usage = usageMap.get(m.id) ?? { used: 0, limit: m.rpd } as UsageEntry;
                     return (
-                      <span key={m.id} className={`model-badge model-${status}`} aria-label={`${m.label} — ${statusLabel}`}>
+                      <span key={m.id} className={`model-badge model-${status}`} aria-label={`${m.label} — ${statusLabel}, ${usage.used} of ${usage.limit} used`}>
                         {status === "active" ? "\u25CF" : status === "failed" ? "\u2717" : "\u25CB"}
-                        {" "}{m.label} <small>({m.rpd})</small>
+                        {" "}{m.label} <small>({usage.used}/{m.rpd})</small>
                       </span>
                     );
                   })}
