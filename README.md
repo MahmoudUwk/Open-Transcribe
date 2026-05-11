@@ -1,26 +1,26 @@
-# Open-Transcribe (Web Edition)
+# Open-Transcribe
 
-[https://open-transcribe.netlify.app](https://open-transcribe.netlify.app) delivers Open-Transcribe as a browser-based experience. Record audio, run Gemini-powered prompts, and review transcripts directly in the cloud—no desktop install required.
+Browser-based audio transcription powered by Google Gemini. Record, transcribe, and get AI-generated output — no install needed.
+
+**Live:** [open-transcribe.netlify.app](https://open-transcribe.netlify.app)
 
 <p align="center">
   <img src="app.png" alt="Open-Transcribe UI" width="520" />
 </p>
 
-## 🌐 Highlights
+## What's new — May 10, 2026
 
-- **Instant access**: Works anywhere a modern browser runs (Chrome, Edge, Firefox). Microphone prompts are handled by the browser’s permission system.
-- **Gemini-ready**: Paste your Gemini API key once; it’s stored securely in `localStorage` on that device.
-- **Responsive UI**: Polished layout optimized for both laptops and smaller screens.
-- **Privacy-aware**: Audio is only uploaded when you initiate transcription. Everything else stays in the browser session.
+- **Free model pool** — two generous free-tier Gemini models with automatic FIFO rotation on rate limits (520 combined RPD)
+- **Smart prompts** — cleaned-up transcriptions (no fillers/stutters), strict no-hallucination action plans, and a voice-command mode
+- **Daily usage tracker** — per-model counter (X/Y RPD) resets at 3:00 AM EDT
 
-## 📁 Repository Layout
+## Quick start
 
-- **`src/`** – React + Vite application source and tests
-- **`netlify.toml`** – Netlify build configuration (`npm run build`, publish `src/dist`)
-- **`app.png`** – Marketing imagery
-- **`LICENSE`** – MIT license
+1. **Get a free Gemini API key** → [aistudio.google.com/api-keys](https://aistudio.google.com/api-keys)
+2. Open [open-transcribe.netlify.app](https://open-transcribe.netlify.app)
+3. Paste your key, hit **Start Recording**, then **Run**
 
-## 🚀 Getting Started (local dev)
+## Local dev
 
 ```bash
 git clone https://github.com/MahmoudUwk/Open-Transcribe.git
@@ -29,65 +29,36 @@ npm install
 npm run dev
 ```
 
-Visit the printed URL (default `http://localhost:5173/`) and allow microphone access when prompted.
+## Models
 
-## 🛠️ Build for Production
+| Model | RPD | Role |
+|---|---|---|
+| Gemini 3.1 Flash-Lite | 500 | Primary |
+| Gemini 3 Flash Preview | 20 | Fallback |
 
-```bash
-cd Open-Transcribe/src
-npm run build
-```
+On rate-limit (429/503), the router automatically tries the next model. If all fail, it reports the error — no infinite loops.
 
-Static assets are emitted to `src/dist/`. Deploy that folder to any static host (Netlify, Vercel, GitHub Pages, Cloudflare Pages, etc.). The Netlify workflow is preconfigured:
+## Prompt presets
 
-- `netlify init` (done) links to Netlify CI/CD.
-- `netlify deploy --prod --dir=dist` publishes the latest build.
+| Preset | Use for |
+|---|---|
+| **Transcribe** | Clean transcription — removes fillers, stutters, false starts |
+| **Transcribe & Plan** | Transcription + action items from what was said (no added suggestions) |
+| **Instruction Assistant** | Voice commands — speaks code, emails, plans; model executes directly |
 
-## 🧩 Prompt Presets
-
-Open-Transcribe ships with ready-to-use Gemini prompts defined in `src/src/constants/config.ts`.
-
-- **Transcribe (Autodetect languages)** (`transcribe-autodetect`)
-  - Verbatim transcript with automatic language detection.
-  - Output: single clean paragraph, no speaker labels.
-- **Transcribe and Plan** (`transcribe-plan`)
-  - Produces the full transcription plus a "Plan" section summarizing next actions.
-  - Helpful for meetings or brainstorming sessions.
-- **Instruction Assistant** (`instruction-assistant`)
-  - Follows the spoken request exactly (draft an email, explain a topic, etc.).
-  - Returns a transcription only if the audio explicitly asks for one.
-
-## 🔐 Storing API Keys
-
-- Each browser profile saves its Gemini key in `localStorage`.
-- Users must re-enter the key when switching browsers or devices.
-- Consider adding export/import features if you need cross-device sync.
-
-## 🔒 Security Notes
-
-- Open-Transcribe never stores your Gemini key on a server; it lives only in the current browser’s `localStorage`.
-- Only paste a key on trusted machines. Anyone with access to that browser profile (or DevTools) can read or remove the stored key.
-- If you suspect exposure, rotate the key in Google AI Studio and click **Remove** in the Gemini preferences panel to clear the cached value.
-- Browser extensions or untrusted scripts could capture audio or keys; advise users to keep their environment clean.
-
-## 🧪 Testing & Linting
+## Tests
 
 ```bash
-npm run lint
-npm run test        # Vitest unit tests
-npm run test:e2e    # Playwright smoke tests (install Playwright browsers first)
+npm run test          # unit tests
+npm run test:bible    # integration test (requires API key in .env)
+npm run test:e2e      # Playwright browser tests
+npm run lint          # ESLint
 ```
 
-## 🤝 Contributing
+## Security
 
-- Fork the repo, create a branch, and open a pull request.
-- Run `npm run lint` and `npm run test` before submitting.
-- UI changes benefit from screenshots or short videos in the PR description.
+Your API key is stored in the browser's `localStorage` only. It is never sent to any server besides Google's API. If compromised, rotate it in [AI Studio](https://aistudio.google.com/api-keys) and click **Remove** in the app.
 
-## 📄 License
+## License
 
-Released under the [MIT License](LICENSE). Feel free to remix and build on Open-Transcribe—just keep the notice intact.
-
----
-
-Share feedback or ideas via GitHub Issues. If the project helps you, a ⭐️ is always appreciated!
+[MIT](LICENSE)
