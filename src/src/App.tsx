@@ -355,7 +355,6 @@ export function App({
           </div>
         </div>
         <div className="header-meta">
-          <span className="version-tag">vNext (Tauri)</span>
           <a
             className="header-link"
             href="https://github.com/MahmoudUwk/Open-Transcribe.git"
@@ -386,6 +385,18 @@ export function App({
               <path d="M20.447 20.452h-3.554v-5.569c0-1.329-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.937v5.669H9.352V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.604 0 4.268 2.372 4.268 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.121 20.452H3.553V9h3.568v11.452z"></path>
             </svg>
             <span className="sr-only">LinkedIn</span>
+          </a>
+          <a
+            className="header-link resume-link"
+            href="https://mahmoudresume.netlify.app/"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Mahmoud Sallam Resume"
+          >
+            <svg className="resume-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-6h8v1.5H8V14zm0 3h8v1.5H8V17zm0-6h3v1.5H8V11zm4-7l4 4h-4V4z"/>
+            </svg>
+            <span className="sr-only">Resume</span>
           </a>
         </div>
       </header>

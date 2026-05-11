@@ -31,7 +31,20 @@ body {
   gap: clamp(8px, 1.5vh, 16px);
 }
 
-.header,
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(180, 140, 60, 0.04) 10px, rgba(180, 140, 60, 0.04) 20px),
+    linear-gradient(135deg, rgba(60, 40, 10, 0.88), rgba(40, 25, 5, 0.92));
+  border: 1px solid rgba(180, 140, 60, 0.3);
+  border-radius: 16px;
+  padding: clamp(12px, 2vh, 16px) clamp(16px, 3vw, 24px);
+  box-shadow: 0 10px 25px rgba(30, 15, 0, 0.5);
+  backdrop-filter: blur(14px);
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
@@ -101,25 +114,22 @@ body {
 .header h1 {
   font-size: 28px;
   margin: 0;
+  color: #f5e6c8;
 }
 
 .header p {
   margin: 4px 0 0;
-  color: #cbd5f5;
+  color: #d4b896;
 }
 
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: nowrap;
-  color: #cbd5f5;
+  color: #d4b896;
   white-space: nowrap;
-}
-
-.version-tag {
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 200%;
 }
 
 .author-credit {
@@ -127,7 +137,7 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #cbd5f5;
+  color: #d4b896;
 }
 
 .header-link {
@@ -141,7 +151,16 @@ body {
   color: #60a5fa;
 }
 
-.linkedin-icon {
+.header .header-link {
+  color: #d4a853;
+}
+
+.header .header-link:hover {
+  color: #e8c170;
+}
+
+.linkedin-icon,
+.resume-icon {
   width: 20px;
   height: 20px;
   fill: currentColor;
