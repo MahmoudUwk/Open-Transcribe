@@ -479,6 +479,28 @@ textarea {
   font-size: 14px;
 }
 
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  min-height: 100vh;
+}
+
+.error-boundary h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #f87171;
+}
+
+.error-boundary p {
+  color: #cbd5f5;
+  max-width: 480px;
+}
+
 @media (min-width: 1280px) {
   .page {
     padding: 20px 24px 28px;

@@ -15,7 +15,8 @@
       "vite/client",
       "vitest/globals"
     ],
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "skipLibCheck": true
   },
   "include": [
     "src",

@@ -23,19 +23,21 @@ export interface UseAudioRecorderResult {
 export function useAudioRecorder(
   options: UseAudioRecorderOptions = {}
 ): UseAudioRecorderResult {
-  const adapterRef = useRef<RecorderAdapter>();
+  const adapterRef = useRef<RecorderAdapter | undefined>(undefined);
   const [snapshot, setSnapshot] = useState<AudioRecorderSnapshot>({ state: "idle" });
-  const recorderRef = useRef<AudioRecorder>();
+  const recorderRef = useRef<AudioRecorder | undefined>(undefined);
 
-  if (!adapterRef.current) {
-    adapterRef.current = options.adapter ?? createBrowserRecorderAdapter();
+  let adapter = adapterRef.current;
+  if (!adapter) {
+    adapter = options.adapter ?? createBrowserRecorderAdapter();
+    adapterRef.current = adapter;
   }
 
-  if (!recorderRef.current) {
-    recorderRef.current = new AudioRecorder(adapterRef.current);
+  let recorder = recorderRef.current;
+  if (!recorder) {
+    recorder = new AudioRecorder(adapter);
+    recorderRef.current = recorder;
   }
-
-  const recorder = recorderRef.current;
 
   useEffect(() => {
     const unsubscribe = recorder.subscribe((next) => {
