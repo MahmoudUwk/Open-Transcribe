@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "install": "cd src && npm install",
-    "dev": "cd src && npm run dev",
-    "build": "cd src && npm run build",
-    "test": "cd src && npm run test",
-    "test:bible": "cd src && npm run test:bible",
-    "lint": "cd src && npm run lint",
-    "check": "cd src && npm run check"
+    "install": "cd src && pnpm install",
+    "dev": "cd src && pnpm dev",
+    "build": "cd src && pnpm build",
+    "test": "cd src && pnpm test",
+    "test:bible": "cd src && pnpm test:bible",
+    "lint": "cd src && pnpm lint",
+    "check": "cd src && pnpm check"
   }
 }

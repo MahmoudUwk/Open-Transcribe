@@ -117,7 +117,7 @@ describe("App layout", () => {
   it("renders header branding and subtitle", async () => {
     await renderApp();
     expect(await screen.findByRole("heading", { name: /open-transcribe/i })).toBeInTheDocument();
-    expect(screen.getByText(/free browser audio transcription/i)).toBeInTheDocument();
+    expect(screen.getByText(/Configure free API/i)).toBeInTheDocument();
   });
 
   it("provides recording controls and status", async () => {
@@ -137,7 +137,7 @@ describe("App layout", () => {
   it("exposes transcription output area", async () => {
     await renderApp();
     await screen.findByRole("heading", { name: /output/i });
-    expect(screen.getByRole("textbox", { name: /transcription output/i })).toBeInTheDocument();
+    expect(screen.getByText(/transcriptions will appear here/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy/i })).toBeDisabled();
   });
 
@@ -200,7 +200,7 @@ describe("App layout", () => {
       expect(container!.querySelector("audio.recording-preview")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /^clear$/i }));
+    await user.click(screen.getAllByRole("button", { name: /^clear$/i })[0]);
 
     const playback = container!.querySelector("audio.recording-preview") as HTMLAudioElement;
     expect(playback).toHaveAttribute("aria-disabled", "true");
@@ -257,6 +257,8 @@ describe("App layout", () => {
     await waitFor(() => {
       expect(transcribe).toHaveBeenCalledTimes(1);
     });
+
+    await user.click(screen.getByRole("button", { name: /raw/i }));
 
     await waitFor(() => {
       expect(screen.getByRole("textbox", { name: /transcription output/i })).toHaveValue(

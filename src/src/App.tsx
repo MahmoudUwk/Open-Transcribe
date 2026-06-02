@@ -1,11 +1,13 @@
 import Markdown from "markdown-to-jsx";
 import {
   ChangeEvent,
+  DragEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { MODEL_POOL, PROMPT_PRESETS } from "./constants/config";
 import { useAudioRecorder } from "./hooks/useAudioRecorder";
@@ -55,6 +57,11 @@ export function App({
   const [routerState, setRouterState] = useState<RouterState | null>(null);
   const [usageData, setUsageData] = useState<UsageData>(() => loadUsage());
   const outputRef = useRef<HTMLElement>(null);
+
+  const [activeMode, setActiveMode] = useState<"record" | "upload">("record");
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const usageMap = useMemo(() => getUsageMap(MODEL_POOL, usageData), [usageData]);
 
@@ -288,6 +295,73 @@ export function App({
 
   const handleClearAll = () => {
     handleResetRecorder();
+    setUploadedFileName(null);
+  };
+
+  const handleModeSwitch = (mode: "record" | "upload") => {
+    setActiveMode(mode);
+    handleResetRecorder();
+    setUploadedFileName(null);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    const type = resolveAudioType(file);
+    if (!type) {
+      setUploadedFileName(file.name);
+      setTranscriptionStatus(null);
+      setTranscriptionError(
+        `Unsupported audio format "${file.type || "unknown"}". Supported formats: ${SUPPORTED_FORMATS_TEXT}`
+      );
+      return;
+    }
+
+    setTranscriptionError(undefined);
+    handleResetRecorder();
+    setUploadedFileName(file.name);
+    setTranscriptionStatus("Loading file…");
+
+    const durationMs = await getFileDuration(file);
+
+    const result: RecordingResult = {
+      blob: file,
+      format: type,
+      durationMs,
+    };
+
+    setLastRecording(result);
+    setTranscriptionStatus("File loaded. Ready to transcribe.");
+  };
+
+  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      void handleFileUpload(file);
+    }
+    if (event.target) {
+      event.target.value = "";
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      void handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
   };
 
   const handleBeginEditApiKey = () => {
@@ -321,7 +395,7 @@ export function App({
   };
 
   const transcribeDisabled =
-    !lastRecording || !apiKey || isTranscribing || recordingState === "recording";
+    !lastRecording || !apiKey || isTranscribing || (activeMode === "record" && recordingState === "recording");
   const isApiKeyPresent = apiKey.trim().length > 0;
   const showApiKeyForm = !isApiKeyPresent || isEditingApiKey;
 
@@ -415,10 +489,34 @@ export function App({
       <main className="main">
         <section className="controls" aria-label="Recording controls">
           <div className="controls-content">
-            <div className="controls-actions">
-              <button type="button" onClick={onToggleRecording} disabled={isBusy}>
-                {recordingButtonLabel}
+            <div className="mode-tabs" role="tablist" aria-label="Audio input mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeMode === "record"}
+                className={`mode-tab${activeMode === "record" ? " active" : ""}`}
+                onClick={() => handleModeSwitch("record")}
+                disabled={isTranscribing}
+              >
+                Record
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeMode === "upload"}
+                className={`mode-tab${activeMode === "upload" ? " active" : ""}`}
+                onClick={() => handleModeSwitch("upload")}
+                disabled={isTranscribing}
+              >
+                Upload
+              </button>
+            </div>
+            <div className="controls-actions">
+              {activeMode === "record" && (
+                <button type="button" onClick={onToggleRecording} disabled={isBusy}>
+                  {recordingButtonLabel}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleTranscribeRecording}
@@ -433,9 +531,48 @@ export function App({
                   transcription.length === 0 && !lastRecording && !transcriptionStatus
                 }
               >
-                Clear Recording
+                Clear
               </button>
             </div>
+
+            {activeMode === "upload" && !lastRecording && (
+              <div
+                className={`upload-zone${isDragging ? " dragover" : ""}`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                aria-label="Upload audio file"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                <span className="upload-icon" aria-hidden="true">+</span>
+                <span className="upload-prompt">
+                  Drop audio file here or <strong>browse files</strong>
+                </span>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              style={{ display: "none" }}
+              onChange={handleFileInputChange}
+              aria-hidden="true"
+            />
+
+            {uploadedFileName && lastRecording && (
+              <div className="upload-info">
+                <span className="upload-info-name">{uploadedFileName}</span>
+                <span>{formatRecordingSummary(lastRecording)}</span>
+              </div>
+            )}
 
             <div className="controls-row">
               <div className="model-pool" aria-label="Model pool">
@@ -482,7 +619,7 @@ export function App({
               <p className="playback-summary">
                 {lastRecording
                   ? `Last capture: ${formatRecordingSummary(lastRecording)}`
-                  : "Record audio to enable playback."}
+                  : "Record audio or upload a file to enable playback."}
               </p>
               <audio
                 className="recording-preview"
@@ -635,7 +772,7 @@ export function App({
           <div className="transcription-content">
             {showRaw ? (
               <textarea
-                ref={outputRef as React.RefObject<HTMLTextAreaElement>}
+                ref={outputRef as RefObject<HTMLTextAreaElement>}
                 aria-label="Transcription output"
                 value={transcription}
                 onChange={(event) => setTranscription(event.target.value)}
@@ -644,7 +781,7 @@ export function App({
             ) : (
               <div
                 className="markdown-preview"
-                ref={outputRef as React.RefObject<HTMLDivElement>}
+                ref={outputRef as RefObject<HTMLDivElement>}
                 tabIndex={0}
                 aria-live="polite"
               >
@@ -711,4 +848,90 @@ function toErrorMessage(value: unknown): string {
     return value;
   }
   return "Recording failed";
+}
+
+const SUPPORTED_AUDIO_TYPES = new Set([
+  "audio/aac",
+  "audio/flac",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/m4a",
+  "audio/mpga",
+  "audio/opus",
+  "audio/ogg",
+  "audio/pcm",
+  "audio/wav",
+  "audio/webm",
+  "audio/x-wav",
+  "audio/x-flac",
+  "audio/x-m4a",
+  "audio/x-aac",
+]);
+
+const EXTENSION_TO_MIME: Record<string, string> = {
+  ".aac": "audio/aac",
+  ".flac": "audio/flac",
+  ".mp3": "audio/mpeg",
+  ".m4a": "audio/mp4",
+  ".mp4": "audio/mp4",
+  ".mpga": "audio/mpga",
+  ".opus": "audio/opus",
+  ".ogg": "audio/ogg",
+  ".pcm": "audio/pcm",
+  ".wav": "audio/wav",
+  ".webm": "audio/webm",
+};
+
+function resolveAudioType(file: File): string | null {
+  const raw = file.type.toLowerCase();
+  if (raw && SUPPORTED_AUDIO_TYPES.has(raw)) {
+    return raw;
+  }
+  const dot = file.name.lastIndexOf(".");
+  if (dot !== -1) {
+    const ext = file.name.slice(dot).toLowerCase();
+    const mapped = EXTENSION_TO_MIME[ext];
+    if (mapped) return mapped;
+  }
+  return null;
+}
+
+const SUPPORTED_FORMATS_TEXT =
+  "AAC, FLAC, MP3, M4A, MP4, OPUS, OGG, PCM, WAV, WEBM";
+
+function getFileDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+    audio.preload = "metadata";
+
+    let settled = false;
+    const done = (value: number | null) => {
+      if (settled) return;
+      settled = true;
+      URL.revokeObjectURL(url);
+      audio.remove();
+      resolve(value);
+    };
+
+    audio.addEventListener("loadedmetadata", () => {
+      const duration = isFinite(audio.duration) && audio.duration > 0
+        ? Math.round(audio.duration * 1000)
+        : null;
+      done(duration);
+    });
+
+    audio.addEventListener("error", () => {
+      done(null);
+    });
+
+    audio.src = url;
+
+    setTimeout(() => {
+      if (!settled && (!audio.duration || !isFinite(audio.duration))) {
+        done(null);
+      }
+    }, 5000);
+  });
 }

@@ -2,6 +2,9 @@
 
 A high-performance, privacy-focused browser audio transcription tool powered by Google Gemini.
 
+<!-- Upload out/promo.mp4 to a GitHub issue comment, copy the generated user-images.githubusercontent.com URL, and replace VIDEO_URL_HERE below -->
+<video src="VIDEO_URL_HERE" width="100%" autoplay loop muted playsinline></video>
+
 ### Features
 - **Instant Transcription:** Browser-based recording & transcription.
 - **Actionable AI:** Real-time extraction of tasks, plans, and summaries.

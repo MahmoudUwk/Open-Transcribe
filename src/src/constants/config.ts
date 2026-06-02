@@ -43,4 +43,12 @@ export const PROMPT_PRESETS: PromptPreset[] = [
     prompt:
       "The supplied audio contains a spoken instruction or request from the user. Execute it precisely. Format your entire response in rich Markdown (using headings, bold text, code blocks, or lists where appropriate). Treat the audio as a voice command directed at you — respond with the requested output directly. Do NOT transcribe the audio unless the speaker explicitly asks for a transcription.",
   },
+  {
+    id: "meeting-notes",
+    label: "Meeting Notes",
+    description:
+      "Transcribe audio, then restructure as organized meeting notes with agenda, discussion summary, decisions, action items, and next steps.",
+    prompt:
+      "You are an expert meeting note-taker. First, accurately transcribe the supplied audio. Then, restructure the content into well-organized meeting notes in Markdown format with the following sections: ## Meeting Notes, ### Agenda / Key Topics, ### Discussion Summary, ### Decisions Made, ### Action Items (with owners if mentioned, use bullet points), ### Next Steps. Be concise but comprehensive. Do not invent information not present in the audio. Skip any preamble — output the meeting notes directly.",
+  },
 ];
