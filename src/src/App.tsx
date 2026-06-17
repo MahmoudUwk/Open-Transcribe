@@ -394,6 +394,19 @@ export function App({
     }
   };
 
+  const handleDownloadRecording = () => {
+    if (!lastRecording) {
+      return;
+    }
+    const url = playbackUrl ?? URL.createObjectURL(lastRecording.blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = buildDownloadFileName(lastRecording, uploadedFileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
   const transcribeDisabled =
     !lastRecording || !apiKey || isTranscribing || (activeMode === "record" && recordingState === "recording");
   const isApiKeyPresent = apiKey.trim().length > 0;
@@ -627,6 +640,13 @@ export function App({
                 controls
                 aria-disabled={playbackUrl ? undefined : true}
               />
+              <button
+                type="button"
+                onClick={handleDownloadRecording}
+                disabled={!lastRecording}
+              >
+                Download
+              </button>
               {transcriptionStatus && (
                 <p className="status-note">{transcriptionStatus}</p>
               )}
@@ -882,6 +902,25 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   ".wav": "audio/wav",
   ".webm": "audio/webm",
 };
+
+const MIME_TO_EXTENSION: Record<string, string> = Object.fromEntries(
+  Object.entries(EXTENSION_TO_MIME).map(([ext, mime]) => [mime, ext.replace(/^\./, "")])
+);
+
+function buildDownloadFileName(
+  recording: RecordingResult,
+  uploadedName: string | null
+): string {
+  if (uploadedName) {
+    return uploadedName;
+  }
+  const ext =
+    MIME_TO_EXTENSION[recording.format] ??
+    recording.format.split("/")[1] ??
+    "audio";
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  return `open-transcribe-${stamp}.${ext}`;
+}
 
 function resolveAudioType(file: File): string | null {
   const raw = file.type.toLowerCase();

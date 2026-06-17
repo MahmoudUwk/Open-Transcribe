@@ -207,6 +207,43 @@ describe("App layout", () => {
     expect(playback).not.toHaveAttribute("src");
   });
 
+  it("enables a download button after recording and triggers a download on click", async () => {
+    const user = userEvent.setup();
+    const mock = createMockAdapter();
+    const deps = createAppDeps();
+    await act(async () => {
+      render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+    });
+
+    const downloadButton = screen.getByRole("button", { name: /download/i });
+    expect(downloadButton).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: /start recording/i }));
+    await user.click(screen.getByRole("button", { name: /stop recording/i }));
+
+    await waitFor(() => {
+      expect(downloadButton).toBeEnabled();
+    });
+
+    let capturedAnchor: HTMLAnchorElement | null = null;
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        capturedAnchor = this;
+      });
+
+    await user.click(downloadButton);
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(capturedAnchor).not.toBeNull();
+    expect(capturedAnchor?.getAttribute("href")).toBe("blob:mock-url");
+    expect(capturedAnchor?.getAttribute("download")).toMatch(
+      /^open-transcribe-.+\.webm$/
+    );
+
+    clickSpy.mockRestore();
+  });
+
   it("saves API key through preferences manager", async () => {
     const user = userEvent.setup();
     const prefs = createMockPreferencesManager({
