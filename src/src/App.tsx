@@ -880,6 +880,7 @@ const SUPPORTED_AUDIO_TYPES = new Set([
   "audio/mpga",
   "audio/opus",
   "audio/ogg",
+  "audio/ogx",
   "audio/pcm",
   "audio/wav",
   "audio/webm",
@@ -898,6 +899,7 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   ".mpga": "audio/mpga",
   ".opus": "audio/opus",
   ".ogg": "audio/ogg",
+  ".ogx": "audio/ogx",
   ".pcm": "audio/pcm",
   ".wav": "audio/wav",
   ".webm": "audio/webm",
@@ -937,7 +939,7 @@ function resolveAudioType(file: File): string | null {
 }
 
 const SUPPORTED_FORMATS_TEXT =
-  "AAC, FLAC, MP3, M4A, MP4, OPUS, OGG, PCM, WAV, WEBM";
+  "AAC, FLAC, MP3, M4A, MP4, OGX, OPUS, OGG, PCM, WAV, WEBM";
 
 function getFileDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {

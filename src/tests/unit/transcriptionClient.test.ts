@@ -11,10 +11,7 @@ const TEST_MODELS: ModelInfo[] = [
 function makeRecording(): RecordingResult {
   const buffer = new Uint8Array([1, 2, 3, 4]).buffer;
   return {
-    blob: {
-      type: "audio/webm",
-      arrayBuffer: async () => buffer,
-    } as Blob,
+    blob: new Blob([buffer], { type: "audio/webm" }),
     format: "audio/webm",
     durationMs: 5000,
   };
@@ -29,9 +26,11 @@ const mockGenerateContent = vi.fn(async () => {
 });
 
 vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: { generateContent: mockGenerateContent },
-  })),
+  GoogleGenAI: class {
+    models = {
+      generateContent: mockGenerateContent,
+    };
+  },
 }));
 
 describe("transcribeRecording", () => {
