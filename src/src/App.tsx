@@ -574,7 +574,7 @@ export function App({
             <input
               ref={fileInputRef}
               type="file"
-              accept="audio/*"
+              accept="audio/*, .ogx"
               style={{ display: "none" }}
               onChange={handleFileInputChange}
               aria-hidden="true"
