@@ -35,66 +35,115 @@ export async function transcribeRecording(
   const router = createRouter(modelPool);
   const notify = () => onRouterChange?.(router.getState());
 
-  let audioBase64: string;
-  try {
-    audioBase64 = await blobToBase64(recording.blob);
-  } catch (error) {
-    throw new TranscriptionError(
-      error instanceof Error ? error.message : "Failed to prepare recording for Gemini"
-    );
-  }
-
   const mimeType = recording.format || recording.blob.type || "audio/webm";
   const promptText = prompt?.trim() || "Provide a transcript of this audio clip.";
-  const contents = [
-    { text: promptText },
-    { inlineData: { mimeType, data: audioBase64 } },
-  ];
-
-  notify();
 
   const { GoogleGenAI } = await import("@google/genai");
   const client = new GoogleGenAI({ apiKey });
 
-  const errors: string[] = [];
-  let triedAll = false;
+  // Threshold of 20 MB. Files larger than this will be uploaded via the Files API
+  // to avoid V8 string allocation limits (allocation size overflow) and Gemini's 20MB payload limit.
+  const UPLOAD_THRESHOLD = 20 * 1024 * 1024;
+  const isLargeFile = recording.blob.size > UPLOAD_THRESHOLD;
 
-  while (!triedAll) {
-    const model = router.current();
-    const state = router.getState();
+  let contents: Array<
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } }
+    | { fileData: { fileUri: string; mimeType: string } }
+  >;
+  let uploadedFile: { uri: string; mimeType: string; name: string } | null = null;
 
-    try {
-      const response = await client.models.generateContent({ model: model.id, contents });
-      const text = response.text ?? extractTextFromResponseSync(response);
+  try {
+    if (isLargeFile) {
+      try {
+        const fileToUpload = recording.blob instanceof File
+          ? recording.blob
+          : new File([recording.blob], `audio.${mimeType.split("/")[1] || "webm"}`, { type: mimeType });
 
-      if (!text) {
-        throw new TranscriptionError(`No transcript returned from ${model.label}`);
+        uploadedFile = await client.files.upload({
+          file: fileToUpload,
+          mimeType,
+        });
+
+        contents = [
+          { text: promptText },
+          {
+            fileData: {
+              fileUri: uploadedFile.uri,
+              mimeType: uploadedFile.mimeType,
+            },
+          },
+        ];
+      } catch (error) {
+        throw new TranscriptionError(
+          error instanceof Error ? `Failed to upload audio file: ${error.message}` : "Failed to upload audio file"
+        );
       }
+    } else {
+      let audioBase64: string;
+      try {
+        audioBase64 = await blobToBase64(recording.blob);
+      } catch (error) {
+        throw new TranscriptionError(
+          error instanceof Error ? error.message : "Failed to prepare recording for Gemini"
+        );
+      }
+      contents = [
+        { text: promptText },
+        { inlineData: { mimeType, data: audioBase64 } },
+      ];
+    }
 
-      return {
-        text,
-        modelUsed: model.id,
-        attempts: state.attempts + 1,
-      };
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unknown error";
-      errors.push(`${model.label}: ${msg}`);
+    notify();
 
-      if (isRetryableError(error)) {
-        const next = router.advance(msg);
-        notify();
-        if (!next) {
-          triedAll = true;
+    const errors: string[] = [];
+    let triedAll = false;
+
+    while (!triedAll) {
+      const model = router.current();
+      const state = router.getState();
+
+      try {
+        const response = await client.models.generateContent({ model: model.id, contents });
+        const text = response.text ?? extractTextFromResponseSync(response);
+
+        if (!text) {
+          throw new TranscriptionError(`No transcript returned from ${model.label}`);
         }
-      } else {
-        throw new TranscriptionError(msg);
+
+        return {
+          text,
+          modelUsed: model.id,
+          attempts: state.attempts + 1,
+        };
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Unknown error";
+        errors.push(`${model.label}: ${msg}`);
+
+        if (isRetryableError(error)) {
+          const next = router.advance(msg);
+          notify();
+          if (!next) {
+            triedAll = true;
+          }
+        } else {
+          throw new TranscriptionError(msg);
+        }
+      }
+    }
+
+    throw new TranscriptionError(
+      `All models exhausted.\n${errors.join("\n")}`
+    );
+  } finally {
+    if (uploadedFile) {
+      try {
+        await client.files.delete({ name: uploadedFile.name });
+      } catch (deleteError) {
+        console.warn("Failed to delete temporary audio file:", deleteError);
       }
     }
   }
-
-  throw new TranscriptionError(
-    `All models exhausted.\n${errors.join("\n")}`
-  );
 }
 
 type GenerateContentResponse = {

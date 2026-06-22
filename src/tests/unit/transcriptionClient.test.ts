@@ -24,11 +24,21 @@ const mockGenerateContent = vi.fn(async () => {
   if (response.error) throw response.error;
   return { text: response.text ?? "transcribed text" };
 });
+const mockUpload = vi.fn(async ({ file, mimeType }) => ({
+  uri: "https://generativelanguage.googleapis.com/v1beta/files/mock-file",
+  mimeType: mimeType || "audio/webm",
+  name: "files/mock-file",
+}));
+const mockDelete = vi.fn(async () => {});
 
 vi.mock("@google/genai", () => ({
   GoogleGenAI: class {
     models = {
       generateContent: mockGenerateContent,
+    };
+    files = {
+      upload: mockUpload,
+      delete: mockDelete,
     };
   },
 }));
@@ -39,6 +49,8 @@ describe("transcribeRecording", () => {
   beforeEach(async () => {
     mockResponses.length = 0;
     mockGenerateContent.mockClear();
+    mockUpload.mockClear();
+    mockDelete.mockClear();
     const mod = await import("../../src/services/transcriptionClient");
     transcribeRecording = mod.transcribeRecording;
   });
@@ -139,5 +151,40 @@ describe("transcribeRecording", () => {
     const calls = mockGenerateContent.mock.calls as Array<Array<{ contents: Array<{ text: string }> }>>;
     const lastCall = calls[calls.length - 1];
     expect(lastCall[0].contents[0].text).toBe("Provide a transcript of this audio clip.");
+  });
+
+  it("uploads large files using Files API instead of inlineData", async () => {
+    mockResponses.push({ text: "large file transcription" });
+
+    // Make a large recording (> 20MB)
+    const largeBuffer = new Uint8Array(21 * 1024 * 1024).buffer;
+    const recording = {
+      blob: new Blob([largeBuffer], { type: "audio/webm" }),
+      format: "audio/webm",
+      durationMs: 60000,
+    };
+
+    const result = await transcribeRecording(recording, {
+      apiKey: "test-key",
+      prompt: "transcribe large",
+      modelPool: TEST_MODELS,
+    });
+
+    expect(result.text).toBe("large file transcription");
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mimeType: "audio/webm",
+      })
+    );
+    expect(mockDelete).toHaveBeenCalledWith({ name: "files/mock-file" });
+
+    const calls = mockGenerateContent.mock.calls as Array<Array<{ contents: Array<any> }>>;
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].contents[1]).toEqual({
+      fileData: {
+        fileUri: "https://generativelanguage.googleapis.com/v1beta/files/mock-file",
+        mimeType: "audio/webm",
+      },
+    });
   });
 });
