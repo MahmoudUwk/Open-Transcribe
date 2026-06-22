@@ -925,7 +925,10 @@ function buildDownloadFileName(
 }
 
 function resolveAudioType(file: File): string | null {
-  const raw = file.type.toLowerCase();
+  let raw = file.type.toLowerCase();
+  if (raw === "application/ogg") {
+    raw = "audio/ogg";
+  }
   if (raw && SUPPORTED_AUDIO_TYPES.has(raw)) {
     return raw;
   }

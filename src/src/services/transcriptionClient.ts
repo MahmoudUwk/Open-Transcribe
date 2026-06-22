@@ -56,9 +56,11 @@ export async function transcribeRecording(
   try {
     if (isLargeFile) {
       try {
-        const fileToUpload = recording.blob instanceof File
-          ? recording.blob
-          : new File([recording.blob], `audio.${mimeType.split("/")[1] || "webm"}`, { type: mimeType });
+        const fileName = recording.blob instanceof File
+          ? recording.blob.name
+          : `audio.${mimeType.split("/")[1] || "webm"}`;
+
+        const fileToUpload = new File([recording.blob], fileName, { type: mimeType });
 
         uploadedFile = await client.files.upload({
           file: fileToUpload,
