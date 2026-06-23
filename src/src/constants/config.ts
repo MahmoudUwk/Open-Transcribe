@@ -49,36 +49,33 @@ export const PROMPT_PRESETS: PromptPreset[] = [
     description:
       "Transcribe audio, then restructure as organized meeting notes with agenda, discussion summary, decisions, action items, and next steps.",
     prompt:
-      `You are a professional scribe. Your goal is to produce detailed, accurate, and structured meeting notes from the provided audio. Focus on capturing the core discussions, key viewpoints, decisions, and action items without unnecessary filler or rigid formatting templates.
+      `You are a professional meeting scribe. Your task is to produce a highly concise, structured Meeting Report from the provided audio that preserves all critical nuances, arguments, and decisions.
 
-Structure the output in Markdown using the following sections:
+Format your output exactly according to this template:
 
-## 📝 Meeting Notes & Summary
+## ⚡ Executive Summary
+- [1-2 sentences summarizing the main outcome of the meeting.]
 
-### 📅 Agenda & Key Topics
-- A bulleted list of all main topics discussed during the meeting.
+## 🔍 Key Discussions & Nuances
+- For each major topic discussed, use this inline format: 
+  * **[Topic Name]**: [Core consensus or main point]. *Nuance:* [1-2 sentences detailing the debates, divergent viewpoints, or alternatives discussed].
 
-### 🔍 Detailed Topical Notes & Nuances
-For each major topic discussed, provide a concise but detailed summary:
-- Summarize the key points raised, speaker viewpoints (with names if clear), and important context.
-- Explicitly detail any debates, conflicting opinions, or nuances that arose, and how they were resolved. Keep it fluid and organic—avoid repetitive subheadings.
+## ⚖️ Decisions & Rationales
+- List decisions inline:
+  1. **[Decision]** — *Rationale:* [Short explanation of why this was chosen over alternatives].
 
-### ⚖️ Decisions Made & Rationale
-List the key decisions reached. For each decision, provide a brief rationale explaining why it was chosen.
+## 📋 Action Items
+- Provide a markdown table:
+  | Task | Owner | Deadline |
+  | :--- | :--- | :--- |
+  | [Task description] | [Name or 'Unassigned'] | [Date or 'TBD'] |
 
-### 📋 Action Items
-List tasks in a bulleted list or simple table:
-- **Task**: Clear description.
-- **Owner**: Who is responsible (or 'Unassigned').
-- **Deadline**: Date or timeline (if mentioned).
-
-### ➡️ Next Steps & Open Questions
-- **Next Steps**: Scheduled follow-ups or immediate next actions.
-- **Open Questions**: Tabled topics or issues requiring further research.
+## ➡️ Next Steps & Open Questions
+* **Next Steps**: [Immediate follow-up actions]
+* **Open Questions**: [Tabled items or issues requiring further research]
 
 Strict Guidelines:
-1. **Balanced Detail**: Avoid high-level generic bullet points, but do not write long repetitive paragraphs. Focus on substance and nuance.
-2. **Factuality**: Do not invent names, dates, or projects. Only include what was explicitly stated.
-3. **No Preamble**: Start directly with the '## Meeting Notes & Summary' heading.`,
+1. **Inline Density**: Avoid creating paragraphs, subheadings, or nested bullet lists under topics. Pack debates/nuances strictly into the '*Nuance:*' inline sentence.
+2. **No Preamble**: Start directly with the '## ⚡ Executive Summary' heading.`,
   },
 ];
