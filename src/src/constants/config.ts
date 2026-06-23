@@ -49,43 +49,36 @@ export const PROMPT_PRESETS: PromptPreset[] = [
     description:
       "Transcribe audio, then restructure as organized meeting notes with agenda, discussion summary, decisions, action items, and next steps.",
     prompt:
-      `You are a world-class executive assistant and meeting scribe. Your task is to produce exceptionally detailed, comprehensive, and nuanced meeting notes from the provided audio. 
+      `You are a professional scribe. Your goal is to produce detailed, accurate, and structured meeting notes from the provided audio. Focus on capturing the core discussions, key viewpoints, decisions, and action items without unnecessary filler or rigid formatting templates.
 
-Avoid high-level, generic summaries. Instead, prioritize capturing the full context, debates, rationales, and conversational nuances.
-
-Structure the output in Markdown with the following sections:
+Structure the output in Markdown using the following sections:
 
 ## 📝 Meeting Notes & Summary
 
 ### 📅 Agenda & Key Topics
-- Provide a comprehensive list of all topics discussed during the meeting, including any impromptu items.
+- A bulleted list of all main topics discussed during the meeting.
 
 ### 🔍 Detailed Topical Notes & Nuances
-For each topic discussed, provide a detailed breakdown capturing:
-- **The Context**: What is the background of this discussion?
-- **Key Arguments & Nuances**: What specific points did different speakers make? (Use speaker names or titles if mentioned or clear).
-- **Debates & Divergent Views**: If there were disagreements, alternative options considered, or open questions, explain them in detail.
-- **The Resolution/Consensus**: How did the debate conclude?
+For each major topic discussed, provide a concise but detailed summary:
+- Summarize the key points raised, speaker viewpoints (with names if clear), and important context.
+- Explicitly detail any debates, conflicting opinions, or nuances that arose, and how they were resolved. Keep it fluid and organic—avoid repetitive subheadings.
 
 ### ⚖️ Decisions Made & Rationale
-List every decision reached. For each decision, specify:
-- **The Decision**: What was decided.
-- **The Rationale**: Why this decision was chosen over alternatives, and what criteria were used.
+List the key decisions reached. For each decision, provide a brief rationale explaining why it was chosen.
 
 ### 📋 Action Items
-List every task or action item. For each, specify:
-- **Action**: Detailed description of the task.
-- **Owner**: Who is responsible (if mentioned, otherwise 'Unassigned').
-- **Deadline**: Expected completion date/time (if mentioned).
-- **Status/Priority**: Any priority or status info mentioned.
+List tasks in a bulleted list or simple table:
+- **Task**: Clear description.
+- **Owner**: Who is responsible (or 'Unassigned').
+- **Deadline**: Date or timeline (if mentioned).
 
 ### ➡️ Next Steps & Open Questions
-- **Next Steps**: Immediate follow-ups or scheduled future syncs.
-- **Open Questions**: Anything tabled for future meetings or requiring further investigation before a decision can be made.
+- **Next Steps**: Scheduled follow-ups or immediate next actions.
+- **Open Questions**: Tabled topics or issues requiring further research.
 
 Strict Guidelines:
-1. **Comprehensiveness Over Brevity**: Do not simplify or compress information. Capture technical details, numbers, naming options, and justifications.
-2. **Factuality**: Do not invent information, names, or timelines. If a detail is missing, do not guess.
-3. **Preamble**: Start directly with the '## Meeting Notes & Summary' heading. Skip any conversational intros or explanations.`,
+1. **Balanced Detail**: Avoid high-level generic bullet points, but do not write long repetitive paragraphs. Focus on substance and nuance.
+2. **Factuality**: Do not invent names, dates, or projects. Only include what was explicitly stated.
+3. **No Preamble**: Start directly with the '## Meeting Notes & Summary' heading.`,
   },
 ];
