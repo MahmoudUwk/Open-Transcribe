@@ -130,7 +130,7 @@ describe("App layout", () => {
     await renderApp();
     expect(screen.getByLabelText(/model pool/i)).toBeInTheDocument();
     expect(screen.getByText(/3\.1 flash-lite/i)).toBeInTheDocument();
-    expect(screen.getByText(/3 flash preview/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\.5 flash/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/prompt preset/i)).toBeInTheDocument();
   });
 
@@ -301,6 +301,38 @@ describe("App layout", () => {
       expect(screen.getByRole("textbox", { name: /transcription output/i })).toHaveValue(
         "Hello world"
       );
+    });
+  });
+
+  it("shows a friendly AI Studio link when transcription fails with an invalid key", async () => {
+    const user = userEvent.setup();
+    const mock = createMockAdapter();
+    const { TranscriptionError } = await import("../../src/services/transcriptionClient");
+    const transcribe = vi.fn(async () => {
+      throw new TranscriptionError("Your Gemini API key is invalid or restricted.", {
+        kind: "api-key-invalid",
+      });
+    });
+    const prefs = createMockPreferencesManager({
+      model: DEFAULT_MODEL,
+      prompt: "transcribe-autodetect",
+      apiKey: "bad-key",
+    });
+
+    const deps = createAppDeps({ preferences: prefs, transcribe });
+    await act(async () => {
+      render(<App recorderAdapter={mock.adapter} {...deps.props} />);
+    });
+
+    await user.click(screen.getByRole("button", { name: /start recording/i }));
+    await user.click(screen.getByRole("button", { name: /stop recording/i }));
+    await user.click(screen.getByRole("button", { name: /run/i }));
+
+    await waitFor(() => {
+      const alert = screen.getByRole("alert");
+      expect(alert).toHaveTextContent(/api key is invalid|api key/i);
+      const link = screen.getByRole("link", { name: /google ai studio/i });
+      expect(link).toHaveAttribute("href", "https://aistudio.google.com/api-keys");
     });
   });
 });

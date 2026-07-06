@@ -3,17 +3,29 @@ export type PromptPreset = {
   label: string;
   description: string;
   prompt: string;
+  /**
+   * When set, enables Gemini's reasoning/thinking at the given level for this
+   * preset. Used by Meeting Notes to force internal transcription before
+   * note generation. Only effective on thinking-capable models.
+   */
+  thinking?: "low" | "medium" | "high";
 };
 
 export type ModelInfo = {
   id: string;
   label: string;
   rpd: number;
+  /**
+   * Whether this model supports Gemini's thinking/reasoning feature.
+   * Flash-Lite variants do NOT think; Flash/Pro variants do.
+   * When a preset requests `thinking`, thinking-capable models are tried first.
+   */
+  thinkingCapable?: boolean;
 };
 
 export const MODEL_POOL: ModelInfo[] = [
-  { id: "gemini-3.1-flash-lite", label: "3.1 Flash-Lite", rpd: 500 },
-  { id: "gemini-3-flash-preview", label: "3 Flash Preview", rpd: 20 },
+  { id: "gemini-3.1-flash-lite", label: "3.1 Flash-Lite", rpd: 500, thinkingCapable: false },
+  { id: "gemini-3.5-flash", label: "3.5 Flash", rpd: 20, thinkingCapable: true },
 ];
 
 export const DEFAULT_MODEL = MODEL_POOL[0].id;
@@ -45,11 +57,16 @@ export const PROMPT_PRESETS: PromptPreset[] = [
   },
   {
     id: "meeting-notes",
-    label: "Meeting Notes",
+    label: "Meeting Notes (raw audio → notes)",
     description:
-      "Transcribe audio, then restructure as organized meeting notes with agenda, discussion summary, decisions, action items, and next steps.",
+      "Sends raw audio directly. The model transcribes internally in its reasoning, then outputs only structured notes — no transcript in the output. Uses a thinking-capable model automatically.",
+    thinking: "high",
     prompt:
-      `You are a professional meeting scribe. Your task is to produce a highly concise, structured Meeting Report from the provided audio that preserves all critical nuances, arguments, and decisions.
+      `You are a professional meeting scribe.
+
+STEP 1 — INTERNAL (do NOT include in your response): In your reasoning, produce a complete, accurate verbatim transcript of the audio. This internal transcript is for your own reference only and must NOT appear in your output. It is the sole source you may use for Step 2.
+
+STEP 2 — OUTPUT: Using ONLY your internal transcript from Step 1, produce a concise, structured Meeting Report. Output ONLY the report below — never include the raw transcript, a "Transcription" section, or any verbatim copy of what was said.
 
 Format your output exactly according to this template:
 
@@ -57,7 +74,7 @@ Format your output exactly according to this template:
 - [1-2 sentences summarizing the main outcome of the meeting.]
 
 ## 🔍 Key Discussions & Nuances
-- For each major topic discussed, use this inline format: 
+- For each major topic discussed, use this inline format:
   * **[Topic Name]**: [Core consensus or main point]. *Nuance:* [1-2 sentences detailing the debates, divergent viewpoints, or alternatives discussed].
 
 ## ⚖️ Decisions & Rationales
@@ -75,7 +92,9 @@ Format your output exactly according to this template:
 * **Open Questions**: [Tabled items or issues requiring further research]
 
 Strict Guidelines:
-1. **Inline Density**: Avoid creating paragraphs, subheadings, or nested bullet lists under topics. Pack debates/nuances strictly into the '*Nuance:*' inline sentence.
-2. **No Preamble**: Start directly with the '## ⚡ Executive Summary' heading.`,
+1. **No Transcript**: The raw transcript must stay in your reasoning. The output starts directly with the '## ⚡ Executive Summary' heading.
+2. **Grounded Only**: Everything in the report must be derived from what was actually said in the audio. Do NOT invent content.
+3. **Inline Density**: Pack debates/nuances strictly into the '*Nuance:*' inline sentence — no nested bullet lists under topics.
+4. **Non-Meeting Audio**: If the audio is not a meeting or contains no meeting-worthy content, output exactly: "No meeting content detected in this audio."`,
   },
 ];

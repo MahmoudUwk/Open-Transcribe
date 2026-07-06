@@ -17,6 +17,11 @@ import {
   type PreferencesManager,
 } from "./services/preferences";
 import { transcribeRecording as defaultTranscribeRecording } from "./services/transcriptionClient";
+import {
+  TranscriptionError,
+  classifyError,
+  type TranscriptionErrorKind,
+} from "./services/transcriptionClient";
 import type { RouterState } from "./services/modelRouter";
 import type { RecorderAdapter, RecordingResult, AudioRecorderState } from "./services/audioRecorder";
 import {
@@ -52,7 +57,8 @@ export function App({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [transcriptionStatus, setTranscriptionStatus] = useState<string | null>(null);
-  const [transcriptionError, setTranscriptionError] = useState<string | undefined>();
+  const [transcriptionError, setTranscriptionError] = useState<TranscriptionFailure | undefined>();
+  const [showErrorDetail, setShowErrorDetail] = useState(false);
   const [isEditingApiKey, setIsEditingApiKey] = useState(true);
   const [routerState, setRouterState] = useState<RouterState | null>(null);
   const [usageData, setUsageData] = useState<UsageData>(() => loadUsage());
@@ -190,6 +196,7 @@ export function App({
     setPlaybackUrl(null);
     setTranscriptionStatus(null);
     setTranscriptionError(undefined);
+    setShowErrorDetail(false);
     setIsTranscribing(false);
     if (!options?.keepTranscription) {
       setTranscription("");
@@ -257,11 +264,15 @@ export function App({
       return;
     }
     if (!apiKey) {
-      setTranscriptionError("Add your Gemini API key to transcribe audio.");
+      setTranscriptionError({
+        message: "Add your Gemini API key below to transcribe audio.",
+        kind: "api-key-invalid",
+      });
       return;
     }
 
     setTranscriptionError(undefined);
+    setShowErrorDetail(false);
     setTranscriptionStatus("Sending audio to Gemini...");
     setRouterState(null);
     setIsTranscribing(true);
@@ -271,6 +282,7 @@ export function App({
         apiKey,
         prompt: selectedPrompt?.prompt ?? "",
         modelPool: MODEL_POOL,
+        thinking: selectedPrompt?.thinking,
         onRouterChange: (state) => {
           setRouterState(state);
           const current = state.entries[state.currentIndex];
@@ -286,8 +298,9 @@ export function App({
       setUsageData(incrementUsage(result.modelUsed));
       outputRef.current?.focus();
     } catch (error) {
-      setTranscriptionError(toErrorMessage(error));
+      setTranscriptionError(toTranscriptionFailure(error));
       setTranscriptionStatus(null);
+      setShowErrorDetail(false);
     } finally {
       setIsTranscribing(false);
     }
@@ -309,9 +322,10 @@ export function App({
     if (!type) {
       setUploadedFileName(file.name);
       setTranscriptionStatus(null);
-      setTranscriptionError(
-        `Unsupported audio format "${file.type || "unknown"}". Supported formats: ${SUPPORTED_FORMATS_TEXT}`
-      );
+      setTranscriptionError({
+        message: `Unsupported audio format "${file.type || "unknown"}". Supported: ${SUPPORTED_FORMATS_TEXT}.`,
+        kind: "unknown",
+      });
       return;
     }
 
@@ -381,16 +395,20 @@ export function App({
       return;
     }
     if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      setTranscriptionError("Clipboard API is unavailable in this environment.");
+      setTranscriptionError({
+        message: "Clipboard is unavailable in this browser.",
+        kind: "unknown",
+      });
       return;
     }
     try {
       await navigator.clipboard.writeText(transcription);
       setTranscriptionStatus("Transcript copied to clipboard.");
     } catch (error) {
-      setTranscriptionError(
-        `Unable to copy transcript: ${toErrorMessage(error)}`
-      );
+      setTranscriptionError({
+        message: `Unable to copy transcript: ${toErrorMessage(error)}`,
+        kind: "unknown",
+      });
     }
   };
 
@@ -813,8 +831,37 @@ export function App({
               </div>
             )}
             {transcriptionError && (
-              <div className="alert error" role="alert">
-                {transcriptionError}
+              <div className="alert error transcription-error" role="alert">
+                <div className="transcription-error-body">
+                  <span className="transcription-error-message">
+                    {transcriptionError.message}
+                  </span>
+                  {transcriptionError.actionUrl && (
+                    <a
+                      className="transcription-error-action"
+                      href={transcriptionError.actionUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {transcriptionError.actionLabel ?? "Open"}
+                    </a>
+                  )}
+                </div>
+                {transcriptionError.technical && (
+                  <div className="transcription-error-detail">
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => setShowErrorDetail((v) => !v)}
+                      aria-expanded={showErrorDetail}
+                    >
+                      {showErrorDetail ? "Hide details" : "Show details"}
+                    </button>
+                    {showErrorDetail && (
+                      <pre className="error-technical">{transcriptionError.technical}</pre>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -868,6 +915,49 @@ function toErrorMessage(value: unknown): string {
     return value;
   }
   return "Recording failed";
+}
+
+type TranscriptionFailure = {
+  message: string;
+  kind: TranscriptionErrorKind | "recording";
+  technical?: string;
+  actionUrl?: string;
+  actionLabel?: string;
+};
+
+const AISTUDIO_KEY_URL = "https://aistudio.google.com/api-keys";
+
+/**
+ * Convert an error thrown during transcription into a user-facing failure.
+ * Trusts `TranscriptionError.kind` when present (set by transcriptionClient),
+ * otherwise runs the generic classifier.
+ */
+function toTranscriptionFailure(error: unknown): TranscriptionFailure {
+  if (error instanceof TranscriptionError) {
+    const base: TranscriptionFailure = {
+      message: error.message,
+      kind: error.kind,
+      technical: error.technical,
+    };
+    if (error.kind === "api-key-invalid" || error.kind === "api-key-permission") {
+      base.actionUrl = AISTUDIO_KEY_URL;
+      base.actionLabel = "Get a valid key in Google AI Studio";
+    }
+    return base;
+  }
+
+  // Defensive: any other thrown value (network/unknown) → classify it.
+  const classified = classifyError(error);
+  const failure: TranscriptionFailure = {
+    message: classified.message,
+    kind: classified.kind,
+    technical: classified.technical,
+  };
+  if (classified.kind === "api-key-invalid" || classified.kind === "api-key-permission") {
+    failure.actionUrl = AISTUDIO_KEY_URL;
+    failure.actionLabel = "Get a valid key in Google AI Studio";
+  }
+  return failure;
 }
 
 const SUPPORTED_AUDIO_TYPES = new Set([

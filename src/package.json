@@ -4,6 +4,7 @@
   "description": "Open-Transcribe web application",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.30.0",
   "scripts": {
     "dev": "vite dev --host",
     "build": "vite build",

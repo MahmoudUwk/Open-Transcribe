@@ -138,8 +138,11 @@ export class AudioRecorder {
 
   private handleStop(): void {
     const duration = this.startedAt ? this.now() - this.startedAt : null;
-    const format = this.handle?.mimeType ?? "audio/webm";
-    const blob = new Blob(this.chunks, { type: format });
+    const rawMimeType = this.handle?.mimeType ?? "audio/webm";
+    const blob = new Blob(this.chunks, { type: rawMimeType });
+    // Gemini accepts only the base MIME type (no codec params), so normalize
+    // the format we expose while keeping the full type on the blob itself.
+    const format = toBaseMimeType(rawMimeType);
 
     this.chunks = [];
     this.startedAt = null;
@@ -211,7 +214,10 @@ export function createBrowserRecorderAdapter(): RecorderAdapter {
         throw new AudioRecorderError("MediaRecorder API is not available");
       }
 
-      const recorder = new MediaRecorder(stream);
+      const mimeType = pickRecorderMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       recorder.addEventListener("dataavailable", (event) => {
         if (event.data && event.data.size > 0) {
           handlers.onData(event.data);
@@ -238,6 +244,52 @@ export function createBrowserRecorderAdapter(): RecorderAdapter {
       };
     },
   };
+}
+
+/**
+ * Codec candidates in priority order. Each entry is a mimeType the browser
+ * MIGHT be able to record. We pick the first one MediaRecorder.isTypeSupported
+ * accepts. webm/opus is preferred because Opus is purpose-built for speech and
+ * is the default on Chrome/Firefox/Android Chrome; the mp4 entries cover iOS
+ * Safari 14.3+; ogg is a Firefox alternative. Returns "" to let the browser
+ * pick its default as a last resort.
+ *
+ * Note: Gemini accepts only the BASE type (no `;codecs=` suffix), so callers
+ * must normalize via toBaseMimeType() before sending audio to the API.
+ */
+const RECORDER_MIME_CANDIDATES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+  "audio/ogg;codecs=opus",
+  "audio/ogg",
+];
+
+export function pickRecorderMimeType(
+  isTypeSupported: (mime: string) => boolean = (m) =>
+    typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)
+): string {
+  for (const candidate of RECORDER_MIME_CANDIDATES) {
+    try {
+      if (isTypeSupported(candidate)) {
+        return candidate;
+      }
+    } catch {
+      // Some browsers throw on isTypeSupported for weird inputs; just skip.
+    }
+  }
+  return "";
+}
+
+/**
+ * Strip parameters (e.g. `;codecs=opus`) from a mimeType to get the base type
+ * that Gemini accepts. Falls back to the input if it's already base form.
+ */
+export function toBaseMimeType(mimeType: string | undefined): string {
+  if (!mimeType) return "audio/webm";
+  const base = mimeType.split(";")[0].trim().toLowerCase();
+  return base || "audio/webm";
 }
 
 function asError(value: unknown): Error {

@@ -8,6 +8,11 @@ const TEST_MODELS: ModelInfo[] = [
   { id: "model-b", label: "Model B", rpd: 20 },
 ];
 
+const TEST_MODELS_WITH_THINKING: ModelInfo[] = [
+  { id: "flash-lite", label: "Flash-Lite", rpd: 500, thinkingCapable: false },
+  { id: "flash-full", label: "Flash", rpd: 20, thinkingCapable: true },
+];
+
 function makeRecording(): RecordingResult {
   const buffer = new Uint8Array([1, 2, 3, 4]).buffer;
   return {
@@ -40,6 +45,11 @@ vi.mock("@google/genai", () => ({
       upload: mockUpload,
       delete: mockDelete,
     };
+  },
+  ThinkingLevel: {
+    LOW: "LOW",
+    MEDIUM: "MEDIUM",
+    HIGH: "HIGH",
   },
 }));
 
@@ -173,7 +183,7 @@ describe("transcribeRecording", () => {
     expect(result.text).toBe("large file transcription");
     expect(mockUpload).toHaveBeenCalledWith(
       expect.objectContaining({
-        mimeType: "audio/webm",
+        config: { mimeType: "audio/webm" },
       })
     );
     expect(mockDelete).toHaveBeenCalledWith({ name: "files/mock-file" });
@@ -186,5 +196,57 @@ describe("transcribeRecording", () => {
         mimeType: "audio/webm",
       },
     });
+  });
+
+  it("passes thinkingConfig when thinking level is set", async () => {
+    mockResponses.push({ text: "notes output" });
+
+    await transcribeRecording(makeRecording(), {
+      apiKey: "test-key",
+      prompt: "produce notes",
+      modelPool: TEST_MODELS_WITH_THINKING,
+      thinking: "high",
+    });
+
+    const calls = mockGenerateContent.mock.calls as Array<
+      Array<{ config?: { thinkingConfig?: { thinkingLevel?: string } } }>
+    >;
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].config?.thinkingConfig?.thinkingLevel).toBe("HIGH");
+  });
+
+  it("does NOT pass thinkingConfig when thinking is not requested", async () => {
+    mockResponses.push({ text: "transcript" });
+
+    await transcribeRecording(makeRecording(), {
+      apiKey: "test-key",
+      prompt: "transcribe",
+      modelPool: TEST_MODELS_WITH_THINKING,
+    });
+
+    const calls = mockGenerateContent.mock.calls as Array<
+      Array<{ config?: unknown }>
+    >;
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].config).toBeUndefined();
+  });
+
+  it("reorders the model pool to try thinking-capable models first when thinking is requested", async () => {
+    // flash-lite is first in the pool but NOT thinking-capable.
+    // flash-full is second but IS thinking-capable.
+    // With thinking: "high", flash-full should be tried first.
+    mockResponses.push({ text: "notes" });
+
+    await transcribeRecording(makeRecording(), {
+      apiKey: "test-key",
+      prompt: "produce notes",
+      modelPool: TEST_MODELS_WITH_THINKING,
+      thinking: "high",
+    });
+
+    const calls = mockGenerateContent.mock.calls as Array<
+      Array<{ model: string }>
+    >;
+    expect(calls[0][0].model).toBe("flash-full");
   });
 });

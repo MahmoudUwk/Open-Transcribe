@@ -2,6 +2,7 @@
   "name": "open-transcribe-root",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@10.30.0",
   "scripts": {
     "install": "cd src && pnpm install",
     "dev": "cd src && pnpm dev",
