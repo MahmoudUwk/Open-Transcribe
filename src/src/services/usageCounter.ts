@@ -18,7 +18,10 @@ function getEdtHour(now: Date = new Date()): number {
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     hour: "numeric",
-    hour12: false,
+    // hourCycle: "h23" (not hour12: false) — hour12:false maps to h24 in some
+    // ICU versions (e.g. Node 20), where midnight is "24" instead of "0",
+    // breaking the reset-date boundary. h23 guarantees midnight = 0.
+    hourCycle: "h23",
   });
   return parseInt(formatter.format(now), 10);
 }
