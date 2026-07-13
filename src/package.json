@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "test": "vitest run --exclude tests/e2e/** --exclude tests/integration/**",
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:bible": "vitest run tests/integration/bible_test.test.ts",
     "test:e2e": "playwright test",
