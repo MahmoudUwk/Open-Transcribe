@@ -31,6 +31,8 @@ import {
   type UsageData,
   type UsageEntry,
 } from "./services/usageCounter";
+import { dbGet, dbSet, dbDelete } from "./services/db";
+import { toBaseMimeType } from "./services/audioRecorder";
 
 export type AppProps = {
   recorderAdapter?: RecorderAdapter;
@@ -69,6 +71,8 @@ export function App({
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isLoadedFromDb, setIsLoadedFromDb] = useState(false);
+
   const usageMap = useMemo(() => getUsageMap(MODEL_POOL, usageData), [usageData]);
 
   const { snapshot, start, stop, reset, error: hookError } = useAudioRecorder({
@@ -89,6 +93,91 @@ export function App({
   const isBusy = recordingState === "requesting-permission" || recordingState === "stopping";
   const isRecording = recordingState === "recording";
   const recorderError = manualError ?? snapshot.error ?? hookError;
+
+  // Load initial state from IndexedDB on mount
+  useEffect(() => {
+    async function initRecovery() {
+      try {
+        const savedTranscription = await dbGet<string>("transcription");
+        if (savedTranscription) {
+          setTranscription(savedTranscription);
+        }
+
+        const savedStatus = await dbGet<string>("transcription_status");
+        if (savedStatus) {
+          setTranscriptionStatus(savedStatus);
+        }
+
+        const activeChunks = await dbGet<Blob[]>("active_chunks");
+        const activeMetadata = await dbGet<{ startedAt: number; mimeType: string }>("active_metadata");
+
+        if (activeChunks && activeChunks.length > 0 && activeMetadata) {
+          const rawMimeType = activeMetadata.mimeType;
+          const blob = new Blob(activeChunks, { type: rawMimeType });
+          const format = toBaseMimeType(rawMimeType);
+          const duration = Date.now() - activeMetadata.startedAt;
+
+          const result: RecordingResult = {
+            blob,
+            format,
+            durationMs: duration > 0 ? duration : null,
+          };
+
+          await dbSet("last_recording", result);
+          await dbDelete("active_chunks");
+          await dbDelete("active_metadata");
+
+          setLastRecording(result);
+          const timeString = new Date(activeMetadata.startedAt).toLocaleTimeString();
+          setTranscriptionStatus(`Recovered interrupted recording from ${timeString}. Ready to transcribe.`);
+        } else {
+          const savedLast = await dbGet<RecordingResult>("last_recording");
+          if (savedLast) {
+            setLastRecording(savedLast);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to recover recording state from IndexedDB:", err);
+      } finally {
+        setIsLoadedFromDb(true);
+      }
+    }
+    void initRecovery();
+  }, []);
+
+  // Sync state changes to IndexedDB
+  useEffect(() => {
+    if (!isLoadedFromDb) return;
+    if (lastRecording) {
+      void dbSet("last_recording", lastRecording);
+    }
+  }, [lastRecording, isLoadedFromDb]);
+
+  useEffect(() => {
+    if (!isLoadedFromDb) return;
+    if (transcription) {
+      void dbSet("transcription", transcription);
+    }
+  }, [transcription, isLoadedFromDb]);
+
+  useEffect(() => {
+    if (!isLoadedFromDb) return;
+    if (transcriptionStatus) {
+      void dbSet("transcription_status", transcriptionStatus);
+    }
+  }, [transcriptionStatus, isLoadedFromDb]);
+
+  // Sync state on recorder stop or error (e.g. device disconnection)
+  useEffect(() => {
+    if (!isLoadedFromDb) return;
+    if (recordingState === "error" || recordingState === "idle") {
+      dbGet<RecordingResult>("last_recording").then((saved) => {
+        if (saved) {
+          setLastRecording(saved);
+        }
+      }).catch((err) => console.error("Error fetching last_recording on state change:", err));
+    }
+  }, [recordingState, isLoadedFromDb]);
 
   const selectedPrompt = useMemo(() => {
     return (
@@ -189,17 +278,20 @@ export function App({
   const handleResetRecorder = (options?: { keepTranscription?: boolean }) => {
     reset();
     setLastRecording(null);
+    void dbDelete("last_recording");
     setManualError(undefined);
     if (playbackUrl) {
       URL.revokeObjectURL(playbackUrl);
     }
     setPlaybackUrl(null);
     setTranscriptionStatus(null);
+    void dbDelete("transcription_status");
     setTranscriptionError(undefined);
     setShowErrorDetail(false);
     setIsTranscribing(false);
     if (!options?.keepTranscription) {
       setTranscription("");
+      void dbDelete("transcription");
     }
   };
 
@@ -209,9 +301,11 @@ export function App({
     try {
       if (recordingState === "idle") {
         setLastRecording(null);
+        void dbDelete("last_recording");
         setTranscriptionStatus("Recording in progress...");
         setTranscriptionError(undefined);
         setTranscription("");
+        void dbDelete("transcription");
         await start();
       } else if (recordingState === "recording") {
         const result = await stop();

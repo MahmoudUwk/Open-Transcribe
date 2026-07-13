@@ -1,3 +1,5 @@
+import { dbSet, dbDelete } from "./db";
+
 export type AudioRecorderState =
   | "idle"
   | "requesting-permission"
@@ -17,7 +19,7 @@ export interface AudioRecorderSnapshot {
 }
 
 export interface RecorderHandle {
-  start(): void;
+  start(timeslice?: number): void;
   stop(): void;
   dispose(): void;
   readonly mimeType?: string;
@@ -52,6 +54,7 @@ export class AudioRecorder {
     reject: (error: Error) => void;
   };
   private startedAt: number | null = null;
+  private wakeLock: { release(): Promise<void> } | null = null;
 
   constructor(
     private readonly adapter: RecorderAdapter,
@@ -82,22 +85,46 @@ export class AudioRecorder {
     this.updateSnapshot({ state: "requesting-permission", error: undefined });
     this.chunks = [];
 
+    // Clear any leftover backup keys
+    await dbDelete("active_chunks");
+    await dbDelete("active_metadata");
+
     try {
       const stream = await this.adapter.requestStream();
       this.handle = this.adapter.createRecorder(stream, {
-        onData: (chunk) => {
+        onData: async (chunk) => {
           if (chunk.size > 0) {
             this.chunks.push(chunk);
+            // Save chunks immediately to IndexedDB
+            await dbSet("active_chunks", this.chunks);
           }
         },
-        onError: (error) => this.handleError(error),
-        onStop: () => this.handleStop(),
+        onError: (error) => {
+          void this.handleError(error);
+        },
+        onStop: () => {
+          void this.handleStop();
+        },
       });
       this.startedAt = this.now();
-      this.handle.start();
+      
+      const mimeType = this.handle.mimeType ?? "audio/webm";
+      await dbSet("active_metadata", { startedAt: this.startedAt, mimeType });
+      
+      // Request Wake Lock to prevent system sleep
+      if (typeof navigator !== "undefined" && "wakeLock" in navigator) {
+        try {
+          this.wakeLock = await (navigator as unknown as { wakeLock: { request(type: string): Promise<{ release(): Promise<void> }> } }).wakeLock.request("screen");
+        } catch (err) {
+          console.warn("AudioRecorder: Failed to acquire screen wake lock:", err);
+        }
+      }
+
+      // Start recording in 5-second slices for durability
+      this.handle.start(5000);
       this.updateSnapshot({ state: "recording" });
     } catch (error) {
-      this.handleError(asError(error));
+      await this.handleError(asError(error));
       throw error;
     }
   }
@@ -115,7 +142,7 @@ export class AudioRecorder {
         this.handle?.stop();
       } catch (error) {
         const err = asError(error);
-        this.handleError(err);
+        void this.handleError(err);
         reject(err);
       }
     });
@@ -123,6 +150,7 @@ export class AudioRecorder {
 
   dispose(): void {
     try {
+      this.releaseWakeLock();
       if (this.handle) {
         this.handle.dispose();
       }
@@ -136,12 +164,22 @@ export class AudioRecorder {
     }
   }
 
-  private handleStop(): void {
+  private releaseWakeLock(): void {
+    if (this.wakeLock) {
+      try {
+        this.wakeLock.release();
+      } catch (err) {
+        console.warn("AudioRecorder: Failed to release screen wake lock:", err);
+      }
+      this.wakeLock = null;
+    }
+  }
+
+  private async handleStop(): Promise<void> {
+    this.releaseWakeLock();
     const duration = this.startedAt ? this.now() - this.startedAt : null;
     const rawMimeType = this.handle?.mimeType ?? "audio/webm";
     const blob = new Blob(this.chunks, { type: rawMimeType });
-    // Gemini accepts only the base MIME type (no codec params), so normalize
-    // the format we expose while keeping the full type on the blob itself.
     const format = toBaseMimeType(rawMimeType);
 
     this.chunks = [];
@@ -150,7 +188,9 @@ export class AudioRecorder {
     this.handle?.dispose();
     this.handle = null;
 
-    this.updateSnapshot({ state: "idle" });
+    // Clear active session from IndexedDB
+    await dbDelete("active_chunks");
+    await dbDelete("active_metadata");
 
     const result: RecordingResult = {
       blob,
@@ -158,13 +198,35 @@ export class AudioRecorder {
       durationMs: duration,
     };
 
+    // Save final recording result to IndexedDB
+    await dbSet("last_recording", result);
+
+    this.updateSnapshot({ state: "idle" });
+
     if (this.pendingStop) {
       this.pendingStop.resolve(result);
       this.pendingStop = undefined;
     }
   }
 
-  private handleError(error: Error): void {
+  private async handleError(error: Error): Promise<void> {
+    this.releaseWakeLock();
+    const duration = this.startedAt ? this.now() - this.startedAt : null;
+    const rawMimeType = this.handle?.mimeType ?? "audio/webm";
+
+    let result: RecordingResult | null = null;
+    if (this.chunks.length > 0) {
+      const blob = new Blob(this.chunks, { type: rawMimeType });
+      const format = toBaseMimeType(rawMimeType);
+      result = {
+        blob,
+        format,
+        durationMs: duration,
+      };
+      // Backup recovered audio to last_recording
+      await dbSet("last_recording", result);
+    }
+
     this.chunks = [];
     this.startedAt = null;
     if (this.handle) {
@@ -172,10 +234,18 @@ export class AudioRecorder {
       this.handle = null;
     }
 
+    // Clear active session from IndexedDB
+    await dbDelete("active_chunks");
+    await dbDelete("active_metadata");
+
     this.updateSnapshot({ state: "error", error: error.message });
 
     if (this.pendingStop) {
-      this.pendingStop.reject(error);
+      if (result) {
+        this.pendingStop.resolve(result);
+      } else {
+        this.pendingStop.reject(error);
+      }
       this.pendingStop = undefined;
     }
   }
@@ -218,6 +288,7 @@ export function createBrowserRecorderAdapter(): RecorderAdapter {
       const recorder = mimeType
         ? new MediaRecorder(stream, { mimeType })
         : new MediaRecorder(stream);
+      
       recorder.addEventListener("dataavailable", (event) => {
         if (event.data && event.data.size > 0) {
           handlers.onData(event.data);
@@ -230,33 +301,36 @@ export function createBrowserRecorderAdapter(): RecorderAdapter {
         handlers.onError(err);
       });
 
+      // Listen for tracks ending (e.g., unplugged hardware)
+      const trackEndedHandler = () => {
+        if (recorder.state === "recording") {
+          handlers.onError(new Error("Audio input device disconnected"));
+        }
+      };
+
+      stream.getTracks().forEach((track) => {
+        track.addEventListener("ended", trackEndedHandler);
+      });
+
       return {
         mimeType: recorder.mimeType,
-        start() {
-          recorder.start();
+        start(timeslice) {
+          recorder.start(timeslice);
         },
         stop() {
           recorder.stop();
         },
         dispose() {
-          recorder.stream?.getTracks().forEach((track) => track.stop());
+          stream.getTracks().forEach((track) => {
+            track.removeEventListener("ended", trackEndedHandler);
+            track.stop();
+          });
         },
       };
     },
   };
 }
 
-/**
- * Codec candidates in priority order. Each entry is a mimeType the browser
- * MIGHT be able to record. We pick the first one MediaRecorder.isTypeSupported
- * accepts. webm/opus is preferred because Opus is purpose-built for speech and
- * is the default on Chrome/Firefox/Android Chrome; the mp4 entries cover iOS
- * Safari 14.3+; ogg is a Firefox alternative. Returns "" to let the browser
- * pick its default as a last resort.
- *
- * Note: Gemini accepts only the BASE type (no `;codecs=` suffix), so callers
- * must normalize via toBaseMimeType() before sending audio to the API.
- */
 const RECORDER_MIME_CANDIDATES = [
   "audio/webm;codecs=opus",
   "audio/webm",
@@ -282,10 +356,6 @@ export function pickRecorderMimeType(
   return "";
 }
 
-/**
- * Strip parameters (e.g. `;codecs=opus`) from a mimeType to get the base type
- * that Gemini accepts. Falls back to the input if it's already base form.
- */
 export function toBaseMimeType(mimeType: string | undefined): string {
   if (!mimeType) return "audio/webm";
   const base = mimeType.split(";")[0].trim().toLowerCase();
